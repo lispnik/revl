@@ -21,6 +21,7 @@
                 ;; application-level (not part of the core tvision library)
                 :components ((:file "threadmon")
                              (:file "repl")
+                             (:file "lisp-editor")
                              (:file "tvlisp")))))
 
 (asdf:defsystem "tvlisp/tests"

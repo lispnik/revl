@@ -408,3 +408,38 @@ the return-from-frame op; if the op doesn't fire, fall through to 99."
     ;; a second result presents a distinct, non-overlapping region
     (tvision::repl-present r :other)
     (is= "two presentations now" (length (tvision::repl-presentations r)) 2)))
+
+;;; ===========================================================================
+;;; Lisp file editor (the Lisp-aware editing extracted from the generic
+;;; tfile-editor into this project's tlisp-file-editor subclass)
+;;; ===========================================================================
+
+(deftest lisp-file-editor-auto-indent
+  ;; the Lisp editor turns colouring on and auto-indents the new line on Return;
+  ;; the generic tfile-editor it subclasses does neither
+  (let ((lisp  (focused (host (make-instance 'tlisp-file-editor
+                                             :bounds (make-trect 0 0 40 12)))))
+        (plain (focused (host (make-instance 'tfile-editor
+                                             :bounds (make-trect 0 0 40 12))))))
+    (ok "lisp editor highlights"           (text-highlight lisp))
+    (ok "plain editor does not highlight"  (not (text-highlight plain)))
+    (flet ((open-form-then-return (ed)
+             (loop for ch across "(defun f ()" do (type-char ed ch))
+             (press-key ed +kb-enter+)
+             (text-cur-col ed)))           ; cursor column on the fresh line
+      (ok  "lisp editor auto-indents the body" (plusp (open-form-then-return lisp)))
+      (is= "plain editor's new line is flush left" (open-form-then-return plain) 0))))
+
+(deftest lisp-file-editor-tab-reindent
+  ;; Tab re-indents the current line for Lisp: strip the auto-indent back to
+  ;; column 0, then Tab restores the proper indentation under the open form
+  (flet ((lead (s) (- (length s) (length (string-left-trim '(#\Space) s)))))
+    (let ((ed (focused (host (make-instance 'tlisp-file-editor
+                                            :bounds (make-trect 0 0 40 12))))))
+      (loop for ch across "(defun f ()" do (type-char ed ch))
+      (press-key ed +kb-enter+)                              ; auto-indented line
+      (dotimes (_ (text-cur-col ed)) (press-key ed +kb-back+)) ; strip to col 0
+      (is= "indent stripped" (lead (nth-line ed (text-cur-line ed))) 0)
+      (press-key ed +kb-tab+)                                ; Tab re-indents
+      (ok "tab restored the Lisp indent"
+          (plusp (lead (nth-line ed (text-cur-line ed))))))))
