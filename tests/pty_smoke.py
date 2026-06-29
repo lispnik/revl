@@ -21,6 +21,7 @@ import tempfile
 import time
 import fcntl
 import termios
+import shutil
 
 ROWS, COLS = 26, 88
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -242,6 +243,39 @@ def run_project_manager(binary):
         tv2.close()
 
 
+def run_project_file_ops(binary):
+    """File operations on the node at point: New file (creates on disk, reveals)
+    and Delete (removes on disk).  Runs against a throwaway directory."""
+    home = tempfile.mkdtemp(prefix="tvlisp-pmops-")
+    proj = os.path.join(home, "proj")
+    os.makedirs(proj)
+    with open(os.path.join(proj, "existing.lisp"), "w") as f:
+        f.write(";; seed\n")
+    with open(os.path.join(home, ".tvlisp_projects"), "w") as f:
+        f.write('("%s")' % proj)
+    tv = Tv(binary, home)
+    try:
+        check(tv.wait("G:rescan"), "project manager auto-restores (file-ops session)")
+        tv.send(b"\x1b[15~", 0.6)              # zoom
+        check(tv.wait("existing.lisp"), "seed file shown")
+        # Delete: Down onto existing.lisp, 'd', confirm (Yes is the default button)
+        tv.send(b"\x1b[B", 0.4)                # Down -> existing.lisp
+        tv.send(b"d", 0.5)
+        check(tv.wait("Delete file"), "D prompts to delete the file")
+        tv.send(b"\r", 0.9)                    # Enter -> Yes
+        check(not os.path.exists(os.path.join(proj, "existing.lisp")), "file deleted from disk")
+        # New file: 'n', type a name, Enter -> created on disk and revealed/opened
+        tv.send(b"n", 0.5)
+        check(tv.wait("New file"), "N opens the New file dialog")
+        tv.type("created.lisp")
+        tv.send(b"\r", 1.0)
+        check(os.path.exists(os.path.join(proj, "created.lisp")), "New file created on disk")
+        check(tv.has("created.lisp"), "new file appears (tree/editor)")
+    finally:
+        tv.close()
+        shutil.rmtree(home, ignore_errors=True)
+
+
 def main():
     binary = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "tvlisp")
     if not os.path.exists(binary):
@@ -251,6 +285,8 @@ def main():
     run(binary)
     print("-- project manager --")
     run_project_manager(binary)
+    print("-- project file operations --")
+    run_project_file_ops(binary)
     print(f"==== {PASS + FAIL} checks, {FAIL} failures ====")
     return 0 if FAIL == 0 else 1
 

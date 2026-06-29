@@ -4742,8 +4742,9 @@ DATA is NIL (it is a container, not a file)."
   ((pm-roots :initarg :pm-roots :initform '() :accessor pm-roots))   ; dir pathnames, parallel to FO-ALL-ROOTS
   (:documentation "A persistent multi-root file explorer.  A:add root, R:remove
 root, Enter:open/focus the file at point, O:open all files under the node, L:load
-/ C:compile the file into the image, G:rescan from disk, `/':fuzzy-filter.  Roots
-and their expanded folders persist in ~/.tvlisp_projects."))
+/ C:compile the file into the image, N:new file, K:new folder, M:rename, D:delete
+ (right-click for the same as a menu), G:rescan from disk, `/':fuzzy-filter.
+Roots and their expanded folders persist in ~/.tvlisp_projects."))
 
 (defun %pm-dir-relpath (prefix name)
   (if (zerop (length prefix)) name (format nil "~a/~a" prefix name)))
@@ -4940,9 +4941,201 @@ shown in a dialog rather than dropping into a debugger."
                                  (logior +mf-information+ +mf-ok-button+)))))
            (error (e) (err-box e)))))))
 
+;;; --- file operations (#5): new / rename / delete on the node at point -------
+
+(defun %pm-find-dir-rel (n target prefix)
+  "Relpath of directory/root node TARGET within outline node N, or NIL."
+  (if (eq n target) prefix
+      (loop for c in (outline-node-children n)
+            when (outline-node-children c)
+              do (let ((r (%pm-find-dir-rel
+                           c target (%pm-dir-relpath prefix (string-right-trim "/" (outline-node-text c))))))
+                   (when r (return r))))))
+
+(defun %pm-node-path (w node)
+  "The filesystem pathname NODE denotes: a file leaf's DATA, or a directory /
+root path reconstructed from its position under its root."
+  (cond
+    ((null node) nil)
+    ((pathnamep (outline-node-data node)) (outline-node-data node))   ; file leaf
+    (t (loop for root in (fo-all-roots w) for dir in (pm-roots w) do
+         (let ((rel (%pm-find-dir-rel root node "")))
+           (when rel
+             (return (if (zerop (length rel))
+                         (uiop:ensure-directory-pathname dir)
+                         (uiop:ensure-directory-pathname (merge-pathnames rel dir))))))))))
+
+(defun %pm-node-is-root (w node) (and node (member node (fo-all-roots w)) t))
+
+(defun %pm-target-dir (w)
+  "Directory to create new entries in: the focused node when it is a directory,
+else the directory containing the focused file."
+  (let ((p (%pm-node-path w (outline-current (pw-outline w)))))
+    (cond ((null p) nil)
+          ((uiop:directory-pathname-p p) p)
+          (t (uiop:pathname-directory-pathname p)))))
+
+(defun %pm-open-editors-under (app path)
+  "Open editor windows whose file is PATH, or (when PATH is a directory) under it."
+  (let ((key (%path-key path)) (dirp (uiop:directory-pathname-p path)))
+    (loop for win in (desktop-windows (program-desktop app))
+          when (and (typep win 'teditor-window)
+                    (editor-filename (editor-window-editor win))
+                    (let ((fk (%path-key (editor-filename (editor-window-editor win)))))
+                      (if dirp (eql 0 (search key fk)) (string= key fk))))
+            collect win)))
+
+(defun %pm-new-file (w)
+  "Prompt for a name and create an empty file under the target directory, then
+reveal it and open it in an editor.  The name may include sub-directories."
+  (let ((dir (%pm-target-dir w)))
+    (if (null dir)
+        (message-box "Add a project root first." (logior +mf-information+ +mf-ok-button+))
+        (let ((name (prompt-line "New file" (format nil "Name (under ~a):" (%abbrev-home dir)) "")))
+          (when name
+            (let ((path (merge-pathnames (string-trim " " name) dir)))
+              (cond
+                ((probe-file path)
+                 (message-box "That file already exists." (logior +mf-error+ +mf-ok-button+)))
+                (t (handler-case
+                       (progn
+                         (ensure-directories-exist path)
+                         (close (open path :direction :output
+                                           :if-does-not-exist :create :if-exists :error))
+                         (%pm-rescan w) (%pm-reveal w path)
+                         (%project-open-file (pw-app w) path t))
+                     (error (e) (err-box e)))))))))))
+
+(defun %pm-new-folder (w)
+  "Prompt for a name and create a directory under the target directory.  Since
+the tree is file-based, an empty folder would be invisible, so a .gitkeep
+placeholder is created so the folder shows up (and persists in git)."
+  (let ((dir (%pm-target-dir w)))
+    (if (null dir)
+        (message-box "Add a project root first." (logior +mf-information+ +mf-ok-button+))
+        (let ((name (prompt-line "New folder" (format nil "Name (under ~a):" (%abbrev-home dir)) "")))
+          (when name
+            (let* ((sub (uiop:ensure-directory-pathname (merge-pathnames (string-trim " " name) dir)))
+                   (keep (merge-pathnames ".gitkeep" sub)))
+              (handler-case
+                  (progn
+                    (ensure-directories-exist sub)
+                    (unless (probe-file keep)
+                      (close (open keep :direction :output
+                                        :if-does-not-exist :create :if-exists :error)))
+                    (%pm-rescan w) (%pm-reveal w keep))
+                (error (e) (err-box e)))))))))
+
+(defun %pm-rename (w)
+  "Rename the file or folder at the cursor (within its own parent)."
+  (let* ((node (outline-current (pw-outline w)))
+         (path (%pm-node-path w node)))
+    (cond
+      ((or (null node) (null path))
+       (message-box "Move the cursor onto a file or folder to rename it."
+                    (logior +mf-information+ +mf-ok-button+)))
+      ((%pm-node-is-root w node)
+       (message-box "This is a project root; rename its directory outside the IDE."
+                    (logior +mf-information+ +mf-ok-button+)))
+      ((%pm-open-editors-under (pw-app w) path)
+       (message-box "Close the editor(s) for this item before renaming it."
+                    (logior +mf-information+ +mf-ok-button+)))
+      (t (let* ((dirp (uiop:directory-pathname-p path))
+                (cur (if dirp (%dir-basename path) (file-namestring path)))
+                (new (prompt-line "Rename" "New name:" cur)))
+           (when (and new (plusp (length (string-trim " " new)))
+                      (not (string= (string-trim " " new) cur)))
+             (let* ((parent (if dirp (uiop:pathname-parent-directory-pathname path)
+                                (uiop:pathname-directory-pathname path)))
+                    (target (merge-pathnames (string-trim " " new) parent)))
+               (handler-case
+                   (progn (rename-file path (if dirp (uiop:ensure-directory-pathname target) target))
+                          (%pm-rescan w)
+                          (unless dirp (%pm-reveal w target)))
+                 (error (e) (err-box e))))))))))
+
+(defun %pm-delete (w)
+  "Delete the file or folder at the cursor (folders recursively), with a confirm."
+  (let* ((node (outline-current (pw-outline w)))
+         (path (%pm-node-path w node)))
+    (cond
+      ((or (null node) (null path))
+       (message-box "Move the cursor onto a file or folder to delete it."
+                    (logior +mf-information+ +mf-ok-button+)))
+      ((%pm-node-is-root w node)
+       (message-box "This is a project root.  Use R to remove it from the list (files are kept)."
+                    (logior +mf-information+ +mf-ok-button+)))
+      ((%pm-open-editors-under (pw-app w) path)
+       (message-box "Close the editor(s) for this item before deleting it."
+                    (logior +mf-information+ +mf-ok-button+)))
+      (t (let* ((dirp (uiop:directory-pathname-p path))
+                (prompt (if dirp
+                            (format nil "Delete folder ~a and its ~d file~:p?~%This cannot be undone."
+                                    (%dir-basename path) (length (%node-file-paths node)))
+                            (format nil "Delete file ~a?~%This cannot be undone."
+                                    (file-namestring path)))))
+           (when (= +cm-yes+ (message-box prompt (logior +mf-warning+ +mf-yes-button+ +mf-no-button+)))
+             (handler-case
+                 (progn
+                   (if dirp
+                       (uiop:delete-directory-tree path :validate (constantly t) :if-does-not-exist :ignore)
+                       (delete-file path))
+                   (%pm-rescan w))
+               (error (e) (err-box e)))))))))
+
+(defun %pm-activate-current (w)
+  "Open the file at the cursor (or expand/collapse a directory) -- the menu's Open."
+  (let ((node (outline-current (pw-outline w))))
+    (when node
+      (if (outline-node-children node)
+          (progn (setf (outline-node-expanded node) (not (outline-node-expanded node)))
+                 (outline-update-limit (pw-outline w)) (draw-view w))
+          (when (pathnamep (outline-node-data node))
+            (%project-open-file (pw-app w) (outline-node-data node) t)
+            (%project-refresh w))))))
+
+(defparameter +cm-pmctx-open+    395)
+(defparameter +cm-pmctx-load+    396)
+(defparameter +cm-pmctx-compile+ 397)
+(defparameter +cm-pmctx-newfile+ 398)
+(defparameter +cm-pmctx-newdir+  399)
+(defparameter +cm-pmctx-rename+  400)
+(defparameter +cm-pmctx-delete+  401)
+
+(defun %pm-context-menu (w x y)
+  "Pop up a node-action context menu at (X,Y) and run the chosen action."
+  (let ((cmd (popup-menu
+              (new-menu
+               (menu-item "~O~pen"          +cm-pmctx-open+)
+               (menu-item "~L~oad"          +cm-pmctx-load+)
+               (menu-item "~C~ompile"       +cm-pmctx-compile+)
+               (menu-separator)
+               (menu-item "~N~ew file..."   +cm-pmctx-newfile+)
+               (menu-item "New ~f~older..." +cm-pmctx-newdir+)
+               (menu-item "~R~ename..."     +cm-pmctx-rename+)
+               (menu-item "~D~elete..."     +cm-pmctx-delete+))
+              x y)))
+    (cond
+      ((eql cmd +cm-pmctx-open+)    (%pm-activate-current w))
+      ((eql cmd +cm-pmctx-load+)    (%pm-load-node w nil))
+      ((eql cmd +cm-pmctx-compile+) (%pm-load-node w t))
+      ((eql cmd +cm-pmctx-newfile+) (%pm-new-file w))
+      ((eql cmd +cm-pmctx-newdir+)  (%pm-new-folder w))
+      ((eql cmd +cm-pmctx-rename+)  (%pm-rename w))
+      ((eql cmd +cm-pmctx-delete+)  (%pm-delete w)))))
+
 (defmethod handle-event ((w tproject-manager-window) event)
   (cond
     ((%fo-filter-key w event) (clear-event event))
+    ;; right-click: position the cursor on the clicked row, then a context menu
+    ((and (= (event-type event) +ev-mouse-down+)
+          (logtest (event-mouse-buttons event) +mb-right+))
+     (let* ((ol (pw-outline w))
+            (lp (make-local w (event-mouse-where event)))
+            (row (+ (point-y (scroller-delta ol)) (1- (point-y lp)))))
+       (when (and (>= row 0) (< row (length (outline-visible ol)))) (outline-focus ol row))
+       (%pm-context-menu w (point-x (event-mouse-where event)) (1+ (point-y (event-mouse-where event)))))
+     (clear-event event))
     ((and (= (event-type event) +ev-broadcast+)
           (= (event-command event) +cm-outline-item-selected+)
           (pw-outline w))
@@ -4962,6 +5155,10 @@ shown in a dialog rather than dropping into a debugger."
        (#\o (%project-open-node w) (clear-event event))
        (#\l (%pm-load-node w nil) (clear-event event))
        (#\c (%pm-load-node w t)   (clear-event event))
+       (#\n (%pm-new-file w)   (clear-event event))
+       (#\k (%pm-new-folder w) (clear-event event))
+       (#\m (%pm-rename w)     (clear-event event))
+       (#\d (%pm-delete w)     (clear-event event))
        (#\g (%pm-rescan w) (clear-event event))
        (t (call-next-method))))
     (t (call-next-method))))
