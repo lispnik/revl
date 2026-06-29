@@ -379,6 +379,23 @@ keys:
 - **Thread monitor** (F9, Window ▸ Threads) lists the worker threads with
   Refresh / Kill; new REPL (F2), Clear (F3), Tile (F4), Cascade (F5), Next (F6),
   Close (Window ▸ Close), Help (F1).
+- **Project manager** (Window ▸ Projects, **Alt-P**) — a persistent, multi-root
+  file explorer.  Add any number of project roots (**A**, a directory picker);
+  each becomes an expandable `TOutline` tree of its files.  The files listed per
+  root are the ones **git tracks** (`git ls-files`), so build artifacts and
+  ignored files never appear — a directory that is not a git repository falls
+  back to listing every file on disk.  Directories that contain `.lisp` files are
+  **expanded by default** (doc / asset directories stay folded away).  **Enter**
+  opens (or focuses) the file at the cursor in an editor — open files carry a
+  filled bullet (●), unopened ones a hollow bullet (○); **O** opens every file
+  under the node, **R** removes the focused root (the files on disk are left
+  untouched), **G** rescans from disk, and **`/`** fuzzy-filters the whole tree.
+  The set of roots is saved to `~/.tvlisp_projects` and the window reopens itself
+  on startup.  It is single-instance (Alt-P focuses the existing window).  This
+  is distinct from File ▸ Open System…, which browses a single ASDF system's
+  component tree.
+
+  ![The project manager: a git-tracked file tree with .lisp directories expanded and doc/asset directories collapsed](media/project-manager.gif)
 - **Numbered windows** — each window is assigned the lowest free number 1–9
   (shown in its frame, classic TV style); **Alt-1…9** jumps straight to that
   window.
