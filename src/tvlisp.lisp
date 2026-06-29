@@ -559,6 +559,7 @@ against (defaulting to LABELS) so decorated labels can still be searched."
 descendant, with kept inner nodes expanded.  NIL when nothing matches."
   (let ((kept '()))
     (dolist (n nodes (nreverse kept))
+      (outline-ensure-children n)   ; materialise lazy dirs so filtering sees them
       (let ((subs (%outline-prune (outline-node-children n) query)))
         (when (or subs (flex-score query (outline-node-text n)))
           (let ((c (make-outline-node (outline-node-text n) subs
@@ -4365,7 +4366,7 @@ editor, a hollow one otherwise, plus a tag combining git status (M modified,
   (let ((acc '()))
     (labels ((walk (n)
                (when (pathnamep (outline-node-data n)) (push (outline-node-data n) acc))
-               (mapc #'walk (outline-node-children n))))
+               (mapc #'walk (outline-node-children (outline-ensure-children n)))))   ; load lazy dirs
       (walk node))
     (nreverse acc)))
 
@@ -4626,6 +4627,18 @@ failure (e.g. DIR is not a git repository)."
                   when (plusp (length l)) collect l))))
     (error () nil)))
 
+(defun %run-lines (program args)
+  "Run PROGRAM with ARGS, returning its non-empty stdout lines (any exit code --
+grep/git grep exit 1 when there are no matches), or NIL on failure."
+  (handler-case
+      (let* ((out (make-string-output-stream))
+             (p (sb-ext:run-program program args :search t :output out :error nil :wait t)))
+        (when p
+          (with-input-from-string (s (get-output-stream-string out))
+            (loop for l = (read-line s nil nil) while l
+                  when (plusp (length l)) collect l))))
+    (error () nil)))
+
 (defun %git-files (dir)
   "Sorted relative paths git tracks under DIR, or NIL when DIR is not a git repo."
   (let ((ls (%git-lines dir "ls-files")))
@@ -4664,12 +4677,27 @@ via `ls-files --others' so whole-directory entries don't appear nameless.)"
                    (some #'walk (outline-node-children n))))))
     (walk node)))
 
+(defvar *pm-sort* :name
+  "Project-manager file sort mode: :name (A-Z), :type (by extension), or
+:recent (newest first).  Directories always sort by name and come first.")
+
+(defun %pm-sort-files (files)
+  "Sort file-leaf nodes FILES by the current *PM-SORT* mode."
+  (case *pm-sort*
+    (:type (stable-sort (copy-list files)
+                        (lambda (a b)
+                          (string-lessp (or (pathname-type (outline-node-data a)) "")
+                                        (or (pathname-type (outline-node-data b)) "")))))
+    (:recent (stable-sort (copy-list files) #'>
+                          :key (lambda (n) (or (ignore-errors (file-write-date (outline-node-data n))) 0))))
+    (t files)))   ; :name -- already in alphabetical order
+
 (defun %fs-tree-nodes (entries dir open-keys status)
   "Outline nodes for ENTRIES -- a list of (SEGMENTS . ABS-PATH) under directory
-DIR.  Subdirectories (expandable) come before files; file leaves carry their
-pathname, an open/closed bullet, and a git-status tag/tint (STATUS maps an
-absolute-path namestring -> status keyword).  A directory containing any changed
-file is tinted too."
+DIR.  Subdirectories (expandable, by name) come before files (ordered by
+*PM-SORT*); file leaves carry their pathname, an open/closed bullet, and a
+git-status tag/tint (STATUS maps an absolute-path namestring -> status keyword).
+A directory containing any changed file is tinted too."
   (let ((order '()) (groups (make-hash-table :test 'equal)))
     (dolist (e entries)
       (let ((head (first (car e))))
@@ -4685,20 +4713,25 @@ file is tinted too."
                      (leaf (make-outline-node (%project-file-text p open-keys st) nil p)))
                 (setf (outline-node-color leaf) (%status-color st))
                 (push leaf nodes))
+              ;; a directory: build it lazily -- its children load on first expand.
+              ;; Default-expand and tint are derived from the flat entry list (the
+              ;; files under it) without materialising the subtree.
               (let* ((sub (uiop:ensure-directory-pathname (merge-pathnames head dir)))
-                     (kids (%fs-tree-nodes
-                            (mapcar (lambda (e) (cons (rest (car e)) (cdr e))) es)
-                            sub open-keys status))
-                     (node (make-outline-node (format nil "~a/" head) kids)))
-                ;; expand by default only when the directory contains .lisp files
-                (setf (outline-node-expanded node) (%node-has-lisp node))
-                ;; a folder with changed descendants is tinted (no text tag)
-                (when (some #'outline-node-color kids) (setf (outline-node-color node) 14))
+                     (sub-entries (mapcar (lambda (e) (cons (rest (car e)) (cdr e))) es))
+                     (has-lisp (some (lambda (e) (let ((ty (pathname-type (cdr e))))
+                                                   (and ty (string-equal ty "lisp"))))
+                                     es))
+                     (has-chg (and status (some (lambda (e) (gethash (namestring (cdr e)) status)) es)))
+                     (node (make-outline-node (format nil "~a/" head))))
+                (setf (outline-node-loader node)
+                      (lambda () (%fs-tree-nodes sub-entries sub open-keys status))
+                      (outline-node-expanded node) (and has-lisp t)
+                      (outline-node-color node) (and has-chg 14))
                 (push node nodes)))))
       (setf nodes (nreverse nodes))
-      ;; directories (those with children) first, files after; each already sorted
-      (append (remove-if-not #'outline-node-children nodes)
-              (remove-if #'outline-node-children nodes)))))
+      ;; directories (lazy, by name) first, then files in the chosen order
+      (append (remove-if-not #'outline-node-loader nodes)
+              (%pm-sort-files (remove-if #'outline-node-loader nodes))))))
 
 (defun %fs-root-node (dir open-keys)
   "Top-level outline node for project root DIR: its git-tracked files (plus
@@ -4742,8 +4775,9 @@ DATA is NIL (it is a container, not a file)."
   ((pm-roots :initarg :pm-roots :initform '() :accessor pm-roots))   ; dir pathnames, parallel to FO-ALL-ROOTS
   (:documentation "A persistent multi-root file explorer.  A:add root, R:remove
 root, Enter:open/focus the file at point, O:open all files under the node, L:load
-/ C:compile the file into the image, N:new file, K:new folder, M:rename, D:delete
- (right-click for the same as a menu), G:rescan from disk, `/':fuzzy-filter.
+/ C:compile the file into the image, N:new file, K:new folder, M:rename, D:delete,
+F:find in files, S:cycle sort (name/type/recent) (right-click for a node menu),
+G:rescan from disk, `/':fuzzy-filter.  Directories load lazily (on first expand).
 Roots and their expanded folders persist in ~/.tvlisp_projects."))
 
 (defun %pm-dir-relpath (prefix name)
@@ -4785,14 +4819,17 @@ sub-directories of each root, for persisting the layout."
 
 (defun %pm-restore-open (node open-set)
   "Set NODE's subtree expansion from OPEN-SET (a list of relpath strings): a
-sub-directory is expanded iff its relpath is listed.  The root NODE stays open."
+sub-directory is expanded iff its relpath is listed.  The root NODE stays open.
+Only the open subtree is materialised; collapsed directories stay lazy."
   (labels ((walk (n prefix)
-             (when (outline-node-children n)
+             (when (outline-node-expandable-p n)
                (when (plusp (length prefix))
                  (setf (outline-node-expanded n) (and (member prefix open-set :test #'string=) t)))
-               (dolist (c (outline-node-children n))
-                 (when (outline-node-children c)
-                   (walk c (%pm-dir-relpath prefix (string-right-trim "/" (outline-node-text c)))))))))
+               (when (outline-node-expanded n)              ; only descend into open dirs
+                 (outline-ensure-children n)
+                 (dolist (c (outline-node-children n))
+                   (when (outline-node-expandable-p c)
+                     (walk c (%pm-dir-relpath prefix (string-right-trim "/" (outline-node-text c))))))))))
     (walk node "")))
 
 (defun %pm-add-root (w)
@@ -4843,14 +4880,15 @@ FOCUS is a stable key for the focused node (file by path, dir by relpath)."
                    (setf (gethash dkey seen) t)
                    (when (outline-node-expanded n) (setf (gethash dkey open) t))
                    (when (eq n cur) (setf focus (format nil "D~d:~a" ri prefix)))
-                   (dolist (c (outline-node-children n))
-                     (cond
-                       ((outline-node-children c)
-                        (walk c (%pm-dir-relpath prefix (string-right-trim "/" (outline-node-text c)))))
-                       ((eq c cur)
-                        (setf focus (format nil "F~d:~a" ri
-                                            (and (pathnamep (outline-node-data c))
-                                                 (namestring (outline-node-data c)))))))))))
+                   (when (outline-node-expanded n)   ; descend only into open (loaded) dirs
+                     (dolist (c (outline-node-children n))
+                       (cond
+                         ((outline-node-expandable-p c)
+                          (walk c (%pm-dir-relpath prefix (string-right-trim "/" (outline-node-text c)))))
+                         ((eq c cur)
+                          (setf focus (format nil "F~d:~a" ri
+                                              (and (pathnamep (outline-node-data c))
+                                                   (namestring (outline-node-data c))))))))))))
         (walk root "")))
     (values seen open focus)))
 
@@ -4865,13 +4903,15 @@ FOCUS, or NIL.  Directories unknown to SEEN keep their default expansion."
                      (setf (outline-node-expanded n) (and (gethash dkey open) t)))
                    (when (and focus (string= focus (format nil "D~d:~a" ri prefix)))
                      (setf found n))
-                   (dolist (c (outline-node-children n))
-                     (cond
-                       ((outline-node-children c)
-                        (walk c (%pm-dir-relpath prefix (string-right-trim "/" (outline-node-text c)))))
-                       ((and focus (pathnamep (outline-node-data c))
-                             (string= focus (format nil "F~d:~a" ri (namestring (outline-node-data c)))))
-                        (setf found c)))))))
+                   (when (outline-node-expanded n)   ; materialise & descend only into open dirs
+                     (outline-ensure-children n)
+                     (dolist (c (outline-node-children n))
+                       (cond
+                         ((outline-node-expandable-p c)
+                          (walk c (%pm-dir-relpath prefix (string-right-trim "/" (outline-node-text c)))))
+                         ((and focus (pathnamep (outline-node-data c))
+                               (string= focus (format nil "F~d:~a" ri (namestring (outline-node-data c)))))
+                          (setf found c))))))))
         (walk root "")))
     found))
 
@@ -4897,7 +4937,7 @@ the cursor onto it.  Returns T when the file is found under some root."
                  ((and (pathnamep (outline-node-data n))
                        (string= key (%path-key (outline-node-data n))))
                   (setf found n) t)
-                 ((some #'walk (outline-node-children n))
+                 ((some #'walk (outline-node-children (outline-ensure-children n)))   ; load lazy dirs
                   (setf (outline-node-expanded n) t) t)
                  (t nil))))
       (dolist (root (fo-all-roots w)) (walk root)))
@@ -5101,6 +5141,7 @@ placeholder is created so the folder shows up (and persists in git)."
 (defparameter +cm-pmctx-newdir+  399)
 (defparameter +cm-pmctx-rename+  400)
 (defparameter +cm-pmctx-delete+  401)
+(defparameter +cm-pmctx-find+    402)
 
 (defun %pm-context-menu (w x y)
   "Pop up a node-action context menu at (X,Y) and run the chosen action."
@@ -5113,9 +5154,12 @@ placeholder is created so the folder shows up (and persists in git)."
                (menu-item "~N~ew file..."   +cm-pmctx-newfile+)
                (menu-item "New ~f~older..." +cm-pmctx-newdir+)
                (menu-item "~R~ename..."     +cm-pmctx-rename+)
-               (menu-item "~D~elete..."     +cm-pmctx-delete+))
+               (menu-item "~D~elete..."     +cm-pmctx-delete+)
+               (menu-separator)
+               (menu-item "Find in files..." +cm-pmctx-find+))
               x y)))
     (cond
+      ((eql cmd +cm-pmctx-find+)    (%pm-find-in-files w))
       ((eql cmd +cm-pmctx-open+)    (%pm-activate-current w))
       ((eql cmd +cm-pmctx-load+)    (%pm-load-node w nil))
       ((eql cmd +cm-pmctx-compile+) (%pm-load-node w t))
@@ -5123,6 +5167,68 @@ placeholder is created so the folder shows up (and persists in git)."
       ((eql cmd +cm-pmctx-newdir+)  (%pm-new-folder w))
       ((eql cmd +cm-pmctx-rename+)  (%pm-rename w))
       ((eql cmd +cm-pmctx-delete+)  (%pm-delete w)))))
+
+;;; --- find in files (#10): grep a project root, jump to a match ------------
+
+(defparameter +pm-grep-limit+ 1000)
+
+(defun %pm-grep (dir query)
+  "Search the fixed string QUERY under DIR: `git grep' in a repo (tracked files),
+else `grep -rnI'.  Returns up to +PM-GREP-LIMIT+ (ABS-PATH LINE TEXT) matches."
+  (let* ((dir (uiop:ensure-directory-pathname dir))
+         (gitp (%git-files dir))
+         (lines (if gitp
+                    (%run-lines "git" (list "-C" (namestring dir) "grep" "-n" "-I" "-F" "-e" query))
+                    (%run-lines "grep" (list "-rnI" "--exclude-dir=.git" "-F" "-e" query (namestring dir)))))
+         (out '()) (n 0))
+    (dolist (l lines (nreverse out))
+      (when (>= n +pm-grep-limit+) (return (nreverse out)))
+      (let* ((c1 (position #\: l))
+             (c2 (and c1 (position #\: l :start (1+ c1)))))
+        (when c2
+          (let ((ln (parse-integer l :start (1+ c1) :end c2 :junk-allowed t)))
+            (when ln
+              (push (list (if gitp (merge-pathnames (subseq l 0 c1) dir) (pathname (subseq l 0 c1)))
+                          ln (string-left-trim '(#\Space #\Tab) (subseq l (1+ c2))))
+                    out)
+              (incf n))))))))
+
+(defun %pm-open-at-line (app path line)
+  "Open (or focus) PATH in an editor and move the cursor to 1-based LINE."
+  (multiple-value-bind (win status) (%project-open-file app path t)
+    (when (and win (not (eq status :missing)))
+      (let ((ed (editor-window-editor win)))
+        (when ed
+          (setf (text-cur-line ed) (min (max 0 (1- line)) (max 0 (1- (line-count ed))))
+                (text-cur-col ed) 0)
+          (ensure-visible ed) (draw-view win))))))
+
+(defun %pm-find-in-files (w)
+  "Prompt for a string, grep the focused node's root, and let the user jump to a
+match (fuzzy-filterable list)."
+  (let* ((node (outline-current (pw-outline w)))
+         (idx (and node (position-if (lambda (r) (%node-contains r node)) (fo-all-roots w))))
+         (dir (nth (or idx 0) (pm-roots w))))
+    (if (null dir)
+        (message-box "Add a project root first." (logior +mf-information+ +mf-ok-button+))
+        (let ((q (prompt-line "Find in files" (format nil "Search ~a for:" (%dir-basename dir)) "")))
+          (when (and q (plusp (length (string-trim " " q))))
+            (let ((hits (%pm-grep dir (string-trim " " q))))
+              (if (null hits)
+                  (message-box (format nil "No matches for ~s." q)
+                               (logior +mf-information+ +mf-ok-button+))
+                  (let* ((base (uiop:ensure-directory-pathname dir))
+                         (labels (mapcar (lambda (h)
+                                           (format nil "~a:~d: ~a"
+                                                   (enough-namestring (first h) base) (second h) (third h)))
+                                         hits))
+                         (sel (choose-index (format nil "~d match~:p for ~s~@[  (showing first ~d)~]"
+                                                    (length hits) q
+                                                    (and (= (length hits) +pm-grep-limit+) +pm-grep-limit+))
+                                            labels :w 76)))
+                    (when sel
+                      (let ((h (nth sel hits)))
+                        (%pm-open-at-line (pw-app w) (first h) (second h))))))))))))
 
 (defmethod handle-event ((w tproject-manager-window) event)
   (cond
@@ -5159,6 +5265,10 @@ placeholder is created so the folder shows up (and persists in git)."
        (#\k (%pm-new-folder w) (clear-event event))
        (#\m (%pm-rename w)     (clear-event event))
        (#\d (%pm-delete w)     (clear-event event))
+       (#\s (setf *pm-sort* (case *pm-sort* (:name :type) (:type :recent) (t :name)))
+            (%pm-rescan w)   ; files visibly reorder (name -> type -> recent -> ...)
+            (clear-event event))
+       (#\f (%pm-find-in-files w) (clear-event event))
        (#\g (%pm-rescan w) (clear-event event))
        (t (call-next-method))))
     (t (call-next-method))))
