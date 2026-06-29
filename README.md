@@ -1,19 +1,25 @@
 # tvlisp — a Lisp REPL / mini-IDE
 
 `tvlisp` is a dedicated Lisp environment built on
-[**tvision**](../tvision), the Common Lisp port of Borland's Turbo Vision
-text-mode UI framework.  It uses an in-process, micros-style backend (the same
-operation set Lem gets from micros, but built directly on SBCL built-ins with
-zero external deps), so the running TUI *is* the Lisp image being driven.
+[**tvision**](https://github.com/lispnik/tvision), the Common Lisp port of
+Borland's Turbo Vision text-mode UI framework.  It uses an in-process,
+micros-style backend (the same operation set Lem gets from micros, but built
+directly on SBCL built-ins with zero external deps), so the running TUI *is* the
+Lisp image being driven.
 
 ## Requirements
 
 - **SBCL** — uses SBCL-specific introspection, threads, and `sb-introspect`.
-- **ocicl** for system management, plus the **tvision** framework as a sibling
+- **ocicl** for system management, plus the
+  [**tvision**](https://github.com/lispnik/tvision) framework cloned as a sibling
   project at `../tvision` (tvision is not on ocicl).  `./systems/tvision`
   symlinks to it so ASDF resolves the dependency from this project; `make` also
   adds the project tree to the source registry explicitly, so the build works
-  without any global config.
+  without any global config:
+
+  ```sh
+  git clone git@github.com:lispnik/tvision.git   # alongside this tvlisp checkout
+  ```
 - The **binary has no external dependencies** (only SBCL + tvision).  Only the
   test suite pulls in [FiveAM](https://github.com/lispci/fiveam) (pinned in
   `ocicl.csv`; run `ocicl install` to restore it on a fresh checkout).
@@ -448,4 +454,4 @@ select a window, **Alt-X** quits, and **resizing the terminal** reflows the UI.
 
 ## License
 
-MIT.  Built on the [tvision](../tvision) framework.
+MIT.  Built on the [tvision](https://github.com/lispnik/tvision) framework.
