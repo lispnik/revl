@@ -85,11 +85,28 @@ backend, then post output + results + new package back through tv2's UI bridge."
           (tv2::dt-raise tv2:*desktop* repl) (tv2:invalidate tv2:*desktop*)   ; show the result
           (tv2:repl-submit-string repl (string-trim '(#\Space #\Tab #\Newline #\Return) form)))))))
 
+;;; Stage 4: editor structural ops.  Two more tv2 hooks reuse tvlisp's real Lisp
+;;; logic: package-aware symbol completion against the live image (tvlisp's
+;;; REPL-BACKEND-COMPLETIONS, with the buffer's IN-PACKAGE via %BUFFER-IN-PACKAGE)
+;;; and bracket matching (%PAREN-MATCH-OFFSET, which skips strings/comments).
+
+(defun tvlisp-editor-completions (te token)
+  "Completion candidates for the prefix TOKEN at the cursor, resolved in the
+package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
+  (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :tvision))
+        (buf-pkg  (find-symbol "%BUFFER-IN-PACKAGE" :tvision-tvlisp))
+        (upto     (+ (%line-offset te (tv2::te-cy te)) (tv2::te-cx te))))
+    (let ((pkg (or (and buf-pkg (ignore-errors (find-package (funcall buf-pkg (tv2:te-text te) upto))))
+                   *package*)))
+      (and complete (ignore-errors (funcall complete token pkg))))))
+
 (defun install-tvlisp-logic ()
   "Inject tvlisp's real logic into the tv2 toolkit (extended each migration stage)."
-  (setf tv2:*lisp-indenter*  #'tvlisp-indent          ; stage 1: editor indentation
-        tv2:*repl-eval-fn*    #'tvlisp-repl-eval       ; stage 2: REPL evaluator
-        tv2:*editor-eval-fn*  #'tvlisp-editor-eval))   ; stage 3: eval-defun / eval-region
+  (setf tv2:*lisp-indenter*         #'tvlisp-indent               ; stage 1: editor indentation
+        tv2:*repl-eval-fn*          #'tvlisp-repl-eval            ; stage 2: REPL evaluator
+        tv2:*editor-eval-fn*        #'tvlisp-editor-eval          ; stage 3: eval-defun / eval-region
+        tv2:*editor-completions-fn* #'tvlisp-editor-completions   ; stage 4: symbol completion
+        tv2:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :tvision)))   ; stage 4: bracket match
 
 (defun main ()
   "Run the tv2-based tvlisp IDE until the user quits the launcher."
