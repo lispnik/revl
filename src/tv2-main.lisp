@@ -52,6 +52,9 @@ backend, then post output + results + new package back through tv2's UI bridge."
                          hist)))
           (tv2::repl-abort () (values "" nil (tv2:repl-package win) t hist)))   ; debugger's abort lands here
       (setf (tv2:repl-hist-vars win) new-hist)
+      (let ((lastvals (car (last results))))                  ; remember the primary result (object clipboard)
+        (when (and (not errored) lastvals)
+          (setf (tv2:repl-last-value win) (first lastvals) (tv2:repl-last-value-p win) t)))
       (let ((result-strs (let ((*package* new-pkg))            ; print results in the listener's package
                            (unless errored
                              (loop for vals in results
