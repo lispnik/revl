@@ -56,7 +56,12 @@ make tvlisp-tv2   # build ./tvlisp-tv2 (runs on the tv2 kernel)
 make run-tv2      # build and run it
 ```
 
-It is a separate system/binary, so the classic build above is untouched.
+It is a separate system/binary, so the classic build above is untouched.  The
+IDE is a Turbo-Vision-style desktop — a menu bar, a status bar, and the ported
+windows (REPL with the SLDB debugger, the syntax-highlighting editor, the git
+project tree, the HTML browser with find-in-page):
+
+![tvlisp on the tv2 CLOS kernel](media/tv2-ide.gif)
 
 At a glance — the tools it ships (each detailed below):
 
