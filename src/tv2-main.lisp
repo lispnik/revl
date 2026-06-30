@@ -42,9 +42,14 @@ backend, then post output + results + new package back through tv2's UI bridge."
          (hist (tv2:repl-hist-vars win)))
     (multiple-value-bind (output results new-pkg errored new-hist)
         (restart-case
-            (funcall backend input (tv2:repl-package win)
-                     (lambda (e) (tv2::%repl-debug win e))    ; reuse tv2's cross-thread SLDB debugger
-                     hist)
+            ;; route break (invoke-debugger) and single-step (step-condition --
+            ;; the SBCL stepper bypasses *debugger-hook*) to tv2's cross-thread
+            ;; debugger too, so TRACE :break and (step ...) work in-UI
+            (let ((*debugger-hook* (lambda (c hook) (declare (ignore hook)) (tv2::%repl-debug win c))))
+              (handler-bind ((sb-ext:step-condition (lambda (c) (tv2::%repl-debug win c))))
+                (funcall backend input (tv2:repl-package win)
+                         (lambda (e) (tv2::%repl-debug win e))    ; reuse tv2's cross-thread SLDB debugger
+                         hist)))
           (tv2::repl-abort () (values "" nil (tv2:repl-package win) t hist)))   ; debugger's abort lands here
       (setf (tv2:repl-hist-vars win) new-hist)
       (let ((result-strs (let ((*package* new-pkg))            ; print results in the listener's package
@@ -124,7 +129,9 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
         tv2:*project-status-fn*     #'tvlisp-project-status       ; stage 5: git status badges
         tv2:*project-grep-fn*       #'tvlisp-project-grep         ; stage 5: find-in-files
         tv2:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :tvision)   ; stage 7: object inspector
-                                        tv2:*object->outline-fn*)))
+                                        tv2:*object->outline-fn*)
+        tv2:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :tvision-tvlisp)))   ; stage 8: sb-sprof profiler
+                                      (and p (lambda (form package) (funcall p form package))))))
 
 (defun main ()
   "Run the tv2-based tvlisp IDE until the user quits the launcher."
