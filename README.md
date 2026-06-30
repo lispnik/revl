@@ -60,8 +60,9 @@ It is a separate system/binary, so the classic build above is untouched.  The
 IDE is a Turbo-Vision-style desktop — a menu bar, a status bar, and the ported
 windows (REPL with the SLDB debugger, the syntax-highlighting editor, the git
 project tree, the HTML browser with find-in-page).  The demo below tours the
-migrated debugging tools: tracing, the single-stepper surfacing in the debugger,
-the statistical profiler's report table, the object inspector, and Describe:
+complete IDE: the full menu bar, paredit + line numbers in the editor, source
+navigation (go-to-definition), and a live HyperSpec lookup — alongside the
+tracing / stepping / profiling / inspector tools migrated earlier:
 
 ![tvlisp on the tv2 CLOS kernel](media/tv2-ide.gif)
 
