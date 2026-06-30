@@ -122,7 +122,9 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
         tv2:*editor-completions-fn* #'tvlisp-editor-completions   ; stage 4: symbol completion
         tv2:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :tvision)   ; stage 4: bracket match
         tv2:*project-status-fn*     #'tvlisp-project-status       ; stage 5: git status badges
-        tv2:*project-grep-fn*       #'tvlisp-project-grep))        ; stage 5: find-in-files
+        tv2:*project-grep-fn*       #'tvlisp-project-grep         ; stage 5: find-in-files
+        tv2:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :tvision)   ; stage 7: object inspector
+                                        tv2:*object->outline-fn*)))
 
 (defun main ()
   "Run the tv2-based tvlisp IDE until the user quits the launcher."
