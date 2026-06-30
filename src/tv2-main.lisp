@@ -211,7 +211,9 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
                                         tv2:*object->outline-fn*)
         tv2:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :tvision-tvlisp)))   ; stage 8: sb-sprof profiler
                                       (and p (lambda (form package) (funcall p form package))))
-        tv2:*paredit-fn*            #'tvlisp-paredit))                                       ; stage 9: paredit
+        tv2:*paredit-fn*            #'tvlisp-paredit                                         ; stage 9: paredit
+        tv2:*url-fetch-fn*          (find-symbol "%HTTP-GET" :tvision-tvlisp)                ; stage 13: fetch (curl)
+        tv2:*hyperspec-url-fn*      (find-symbol "HYPERSPEC-URL" :tvision-tvlisp)))          ; stage 13: CLHS map
 
 (defun main ()
   "Run the tv2-based tvlisp IDE until the user quits the launcher."
