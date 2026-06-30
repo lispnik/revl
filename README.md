@@ -59,7 +59,9 @@ make run-tv2      # build and run it
 It is a separate system/binary, so the classic build above is untouched.  The
 IDE is a Turbo-Vision-style desktop — a menu bar, a status bar, and the ported
 windows (REPL with the SLDB debugger, the syntax-highlighting editor, the git
-project tree, the HTML browser with find-in-page):
+project tree, the HTML browser with find-in-page).  The demo below tours the
+migrated debugging tools: tracing, the single-stepper surfacing in the debugger,
+the statistical profiler's report table, the object inspector, and Describe:
 
 ![tvlisp on the tv2 CLOS kernel](media/tv2-ide.gif)
 
