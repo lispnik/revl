@@ -44,7 +44,9 @@ Only the tests depend on FiveAM; the tvlisp binary has no external dependencies.
   :author "Matthew Kennedy"
   :license "MIT"
   :version "0.1.0"
-  :depends-on ("tv2")
+  ;; depends on BOTH the tv2 toolkit and the classic `tvlisp' app, so the IDE
+  ;; reuses tvlisp's framework-agnostic logic (indenter, eval backend, …) on tv2.
+  :depends-on ("tv2" "tvlisp")
   :serial t
   :build-operation "program-op"
   :build-pathname "tvlisp-tv2"

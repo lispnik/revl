@@ -14,8 +14,29 @@
 
 (in-package #:tvlisp-tv2)
 
+;;; --- migration: reuse the classic tvlisp app's real logic on tv2 windows ----
+;;; Stage 1: the editor's Lisp indentation.  tv2's editor calls *LISP-INDENTER*
+;;; for a fresh line; we point it at tvlisp's actual indent engine
+;;; (TVISION::%LISP-INDENT-AT), so the tv2 editor indents exactly like tvlisp.
+
+(defun %line-offset (te line)
+  "Char offset where LINE begins in TE's buffer."
+  (loop for i below line sum (1+ (length (tv2::te-line te i)))))
+
+(defun tvlisp-indent (te)
+  "Indent a fresh line using the classic tvlisp Lisp indenter."
+  (or (ignore-errors
+       (funcall (find-symbol "%LISP-INDENT-AT" :tvision)
+                (tv2:te-text te) (%line-offset te (tv2::te-cy te))))
+      0))
+
+(defun install-tvlisp-logic ()
+  "Inject tvlisp's real logic into the tv2 toolkit (extended each migration stage)."
+  (setf tv2:*lisp-indenter* #'tvlisp-indent))
+
 (defun main ()
   "Run the tv2-based tvlisp IDE until the user quits the launcher."
+  (install-tvlisp-logic)
   (tv2:run-app))
 
 (defun toplevel ()
