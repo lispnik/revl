@@ -36,7 +36,7 @@ FRAMEWORK := $(wildcard ../tvision/src/*.lisp) ../tvision/tvision.asd
 TV2 := $(wildcard ../tvision/tv2/*.lisp) ../tvision/tv2.asd
 
 .DEFAULT_GOAL := all
-.PHONY: all clean run run-tv2 test test-lisp test-pty help
+.PHONY: all clean run run-tv2 test test-lisp test-pty test-pty-tv2 help
 
 all: tvlisp
 
@@ -53,8 +53,8 @@ run: tvlisp
 run-tv2: tvlisp-tv2
 	./tvlisp-tv2
 
-# Full test: the headless REPL/debugger/inspector suite plus the pty smoke test.
-test: test-lisp test-pty
+# Full test: the headless suite plus the classic + tv2 pty smoke tests.
+test: test-lisp test-pty test-pty-tv2
 
 # Headless unit suite (REPL backend, debugger, inspector, thread monitor).
 # FiveAM is a test-only dependency, restored by `ocicl install`.
@@ -67,6 +67,11 @@ test-lisp: tvlisp.asd $(wildcard src/*.lisp) tests/tvlisp-tests.lisp
 # Drive the built ./tvlisp through a pty and assert on the screen (end-to-end).
 test-pty: tvlisp tests/pty_smoke.py
 	$(PYTHON) tests/pty_smoke.py ./tvlisp
+
+# End-to-end smoke test of the tv2 build, driven by the Lisp-native
+# tvision-pty-driver (sibling project ../tvision-pty-driver).
+test-pty-tv2: tvlisp-tv2 tests/pty_smoke_tv2.lisp
+	$(SBCL) --script tests/pty_smoke_tv2.lisp
 
 clean:
 	rm -f tvlisp tvlisp-tv2
