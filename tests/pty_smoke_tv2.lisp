@@ -140,6 +140,14 @@
          (type-text d "RRR")
          (check d "clicking a label focuses its linked control (TLabel)"
                 (and (found? d "RRR") (not (found? d "FFFRRR"))))
-         (key d "esc"))
+         (key d "esc")
+
+         ;; 10. scrollback windows (REPL + all output windows) show a horizontal
+         ;; scrollbar for content wider than the window (a 200-char line overflows
+         ;; at any width).  Keyboard hscroll on output windows is covered elsewhere.
+         (open-menu d #\t) (key d "enter") (wait-for d "Lisp REPL")
+         (type-text d "(write-line (make-string 200 :initial-element #\\=))") (key d "enter")
+         (wait-for d "====")
+         (check d "wide output shows a horizontal scrollbar" (or (found? d "◄") (found? d "►"))))
     (quit-driver d))
   (sb-ext:exit :code (report d :title "tvlisp-tv2 pty smoke")))
