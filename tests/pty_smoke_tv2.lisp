@@ -49,7 +49,7 @@
          (key d "esc")
 
          ;; 3. REPL: open, eval, floating prompt, presentation click, completion
-         (open-menu d #\w) (key d "enter")                   ; Window -> Lisp REPL
+         (open-menu d #\t) (key d "enter")                   ; Tools -> Lisp REPL
          (check d "REPL opens" (wait-for d "Lisp REPL"))
          (type-text d "(list 1 2 3)") (key d "enter")
          (check d "REPL evaluates" (wait-for d "=> (1 2 3)"))
@@ -63,7 +63,7 @@
          (type-text d ")") (key d "enter") (drain d 0.6)
 
          ;; 4. editor: open, classic bottom-frame line:col + INS indicator
-         (open-menu d #\w) (key d "down") (key d "enter")     ; Window -> Text editor
+         (open-menu d #\f) (key d "enter")     ; File -> New (editor)
          (check d "editor opens" (wait-for d "Text editor"))
          (ctrl d #\a) (key d "del")                           ; clear the scratch buffer
          (type-text d "(defun demo (x) (* x x))") (key d "home")
@@ -76,7 +76,7 @@
          (key d "esc")
 
          ;; 6. Unicode editing (wide CJK + accents + emoji)
-         (open-menu d #\w) (key d "down") (key d "enter")
+         (open-menu d #\f) (key d "enter")
          (wait-for d "Text editor")
          (ctrl d #\a) (key d "del")
          (type-text d "日本語 café 🎉")
@@ -86,7 +86,7 @@
          ;; NB: %tool-note raises the REPL over the editor, so do Save-As (needs the
          ;; editor focused) before any note-producing action, and assert the others
          ;; via their transcript notes.
-         (open-menu d #\w) (key d "down") (key d "enter") (wait-for d "Text editor")
+         (open-menu d #\f) (key d "enter") (wait-for d "Text editor")
          (ctrl d #\a) (key d "del") (type-text d "(defun foo")   ; cursor rests on the symbol
          (open-menu d #\e)
          (check d "Edit menu exposes Undo/Cut/Copy/Paste/Select all"
@@ -107,7 +107,7 @@
          (open-menu d #\w) (menu-item d "List")
          (check d "window list dialog lists open windows" (and (wait-for d "Windows") (found? d "Text editor")))
          (key d "esc")
-         (open-menu d #\w) (key d "enter") (wait-for d "Lisp REPL")   ; raise/focus a REPL, give it output
+         (open-menu d #\t) (key d "enter") (wait-for d "Lisp REPL")   ; raise/focus a REPL, give it output
          (type-text d "(* 7 9)") (key d "enter")
          (check d "REPL shows eval output" (wait-for d "=> 63"))
          (open-menu d #\f) (menu-item d "Clear REPL")
@@ -116,7 +116,7 @@
          ;; 8. Settings controls are wired live, + Ctrl-U clears an input field.
          ;; Open Settings by KEYBOARD (Alt-o + Enter): clicking the first menu item
          ;; over a window lets the mouse-release steal focus and it won't open.
-         (open-menu d #\w) (key d "down") (key d "enter") (wait-for d "Text editor")
+         (open-menu d #\f) (key d "enter") (wait-for d "Text editor")
          (ctrl d #\a) (key d "del") (type-text d "(defun a ())")
          (open-menu d #\o) (key d "enter")
          (check d "Settings opens with a Colour-theme radio" (wait-for d "Colour theme"))
@@ -131,7 +131,7 @@
          (key d "esc")
 
          ;; 9. TLabel: clicking a linked label focuses its control (Replace dialog).
-         (open-menu d #\w) (key d "down") (key d "enter") (wait-for d "Text editor")
+         (open-menu d #\f) (key d "enter") (wait-for d "Text editor")
          (ctrl d #\a) (key d "del") (type-text d "hello world")
          (click-text d "Replace")                            ; editor status chip -> Replace dialog
          (check d "Replace dialog opens" (wait-for d "Replace:"))
