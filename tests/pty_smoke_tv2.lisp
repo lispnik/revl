@@ -75,6 +75,29 @@
          (wait-for d "Text editor")
          (ctrl d #\a) (key d "del")
          (type-text d "日本語 café 🎉")
-         (check d "wide/multi-script text renders" (and (found? d "日本語") (found? d "café"))))
+         (check d "wide/multi-script text renders" (and (found? d "日本語") (found? d "café")))
+
+         ;; 7. newly-ported parity features (save-as, rename, pop-back, theme, window list, clear)
+         ;; NB: %tool-note raises the REPL over the editor, so do Save-As (needs the
+         ;; editor focused) before any note-producing action, and assert the others
+         ;; via their transcript notes.
+         (open-menu d #\w) (key d "down") (key d "enter") (wait-for d "Text editor")
+         (ctrl d #\a) (key d "del") (type-text d "(defun foo")   ; cursor rests on the symbol
+         (open-menu d #\f) (menu-item d "Save as")               ; editor still focused (no note yet)
+         (check d "Save-as file dialog opens" (wait-for d "Save as"))
+         (key d "esc")
+         (open-menu d #\e) (menu-item d "Rename symbol")
+         (check d "rename-symbol prompt" (wait-for d "Rename foo"))
+         (type-text d "bar") (key d "enter")
+         (check d "rename rewrites the symbol (1 occurrence)" (wait-for d "renamed 1 occurrence of foo"))
+         (open-menu d #\l) (menu-item d "Navigate") (menu-item d "Pop back")
+         (check d "pop-back reports the empty stack" (wait-for d "location stack is empty"))
+         (open-menu d #\o) (menu-item d "Colour theme")
+         (check d "colour theme cycles to Dark" (wait-for d "colour theme: Dark"))
+         (open-menu d #\w) (menu-item d "List")
+         (check d "window list dialog lists open windows" (and (wait-for d "Windows") (found? d "Text editor")))
+         (key d "esc")
+         (open-menu d #\f) (menu-item d "Clear REPL")            ; removes the theme note from the transcript
+         (check d "Clear REPL empties the transcript" (wait-gone d "colour theme: Dark" :timeout 4)))
     (quit-driver d))
   (sb-ext:exit :code (report d :title "tvlisp-tv2 pty smoke")))
