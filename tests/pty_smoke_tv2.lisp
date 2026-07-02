@@ -43,6 +43,11 @@
          (check d "typexpand result (integer 0 7)" (wait-for d "0 7"))
          (key d "esc")
 
+         ;; 2b. Settings dialog exposes the status-note timeout (checked early, before clutter)
+         (open-menu d #\o) (menu-item d "Settings")
+         (check d "Settings exposes the status-note timeout" (wait-for d "Status-note timeout"))
+         (key d "esc")
+
          ;; 3. REPL: open, eval, floating prompt, presentation click, completion
          (open-menu d #\w) (key d "enter")                   ; Window -> Lisp REPL
          (check d "REPL opens" (wait-for d "Lisp REPL"))
