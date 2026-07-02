@@ -69,6 +69,13 @@
          (type-text d "(defun demo (x) (* x x))") (key d "home")
          (check d "frame indicator shows 1:1" (wait-for d "1:1"))
          (check d "frame indicator shows INS" (found? d "INS"))
+         (ctrl d #\Space)                                     ; terminal-portable selection: set mark
+         (key d "right") (key d "right")                      ; plain arrows extend (only possible with a mark set)
+         (check d "Ctrl-Space mark + plain arrows select" (wait-for d "sel"))
+         (ctrl d #\Space) (key d "home")                      ; clear the mark, back to start
+         (drag-text d "defun" :from 0 :to 5)                  ; mouse: click-drag selects text
+         (check d "mouse drag selects text" (found? d "sel"))
+         (key d "home")                                       ; collapse the selection
 
          ;; 5. call tree (Lisp -> Debug / trace -> Call tree)
          (open-menu d #\l) (menu-item d "Debug / trace") (menu-item d "Call tree")
