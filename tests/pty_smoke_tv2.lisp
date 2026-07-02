@@ -183,6 +183,11 @@
          (check d "Enter copies the emoji" (wait-for d "copied"))
          (open-menu d #\f) (key d "enter") (wait-for d "scratch")   ; new editor
          (ctrl d #\a) (key d "del") (ctrl d #\v)
-         (check d "the copied emoji pastes into an editor" (found? d "🎉")))
+         (check d "the copied emoji pastes into an editor" (found? d "🎉"))
+
+         ;; 14. Window ▸ Close all clears the desktop
+         (open-menu d #\w) (menu-item d "Close all")
+         (check d "Window > Close all removes every window"
+                (and (wait-gone d "Emoji palette" :timeout 3) (not (found? d "Lisp REPL")))))
     (quit-driver d))
   (sb-ext:exit :code (report d :title "tvlisp-tv2 pty smoke")))
