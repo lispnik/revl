@@ -1,0 +1,56 @@
+name: ci
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: tvlisp + tvlisp-tv2 (headless + pty)
+    runs-on: ubuntu-latest
+    steps:
+      # lay the three projects out as siblings under common-lisp/, the layout the
+      # Makefile's source-registry (:tree ../) and the pty suite expect.
+      - name: Checkout tvlisp
+        uses: actions/checkout@v4
+        with:
+          path: common-lisp/tvlisp
+      - name: Checkout tvision (framework + tv2 kernel)
+        uses: actions/checkout@v4
+        with:
+          repository: lispnik/tvision
+          path: common-lisp/tvision
+      - name: Checkout tvision-pty-driver
+        uses: actions/checkout@v4
+        with:
+          repository: lispnik/tvision-pty-driver
+          path: common-lisp/tvision-pty-driver
+
+      - name: Install SBCL
+        run: sudo apt-get update && sudo apt-get install -y sbcl make git python3
+
+      - name: Cache Lisp dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            common-lisp/tvlisp/systems
+            common-lisp/tvision/systems
+          key: ocicl-${{ hashFiles('common-lisp/tvlisp/ocicl.csv', 'common-lisp/tvision/systems.csv') }}
+
+      - name: Install ocicl
+        run: |
+          git clone --depth 1 https://github.com/ocicl/ocicl.git /tmp/ocicl
+          make -C /tmp/ocicl
+          sudo make -C /tmp/ocicl install
+          ocicl setup > /dev/null 2>&1 || true
+
+      - name: Restore Lisp dependencies (tvision + tvlisp)
+        run: |
+          (cd common-lisp/tvision && ocicl install)
+          (cd common-lisp/tvlisp  && ocicl install)
+
+      # make test = test-lisp (FiveAM) + test-pty (classic ./tvlisp, Python) +
+      # test-pty-tv2 (./tvlisp-tv2 driven by the Lisp-native tvision-pty-driver)
+      - name: Run tests
+        working-directory: common-lisp/tvlisp
+        run: make test
