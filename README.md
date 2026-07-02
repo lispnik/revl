@@ -486,6 +486,14 @@ button, and an **overwrite confirmation** before it replaces an existing file.
 
 ![Save dialog: the (*.lisp) mask hint, a suggested file name, and overwrite confirmation](media/file-dialog-save.gif)
 
+- **Emoji palette** (Tools ▸ Emoji palette) — a read-only, scrollable list of
+  emoji, each labelled with its Unicode name straight from SBCL's `CHAR-NAME`.
+  Type to filter by name (`heart`, `rocket`, …); **Enter** or a click copies the
+  glyph to the tv2 clipboard (paste with Ctrl-V) and, via **OSC 52**, to the
+  terminal's system clipboard so you can paste it into any other app.
+
+![Emoji palette: filter by Unicode name and copy a glyph to the clipboard](media/emoji-palette.gif)
+
 ![Browsing the Common Lisp HyperSpec in the THtmlView control](media/hyperspec.gif)
 
 ![HyperSpec lookup of the symbol at the cursor](media/hyperspec-lookup.gif)
