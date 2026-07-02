@@ -50,7 +50,7 @@
 
          ;; 3. REPL: open, eval, floating prompt, presentation click, completion
          (open-menu d #\t) (key d "enter")                   ; Tools -> Lisp REPL
-         (check d "REPL opens" (wait-for d "Lisp REPL"))
+         (check d "REPL opens (numbered title)" (wait-for d "Lisp REPL 1"))
          (type-text d "(list 1 2 3)") (key d "enter")
          (check d "REPL evaluates" (wait-for d "=> (1 2 3)"))
          (check d "prompt floats after output (inline CL-USER>)" (found? d "CL-USER>"))
@@ -64,7 +64,7 @@
 
          ;; 4. editor: open, classic bottom-frame line:col + INS indicator
          (open-menu d #\f) (key d "enter")     ; File -> New (editor)
-         (check d "editor opens" (wait-for d "Text editor"))
+         (check d "editor opens" (wait-for d "scratch"))
          (ctrl d #\a) (key d "del")                           ; clear the scratch buffer
          (type-text d "(defun demo (x) (* x x))") (key d "home")
          (check d "frame indicator shows 1:1" (wait-for d "1:1"))
@@ -77,7 +77,7 @@
 
          ;; 6. Unicode editing (wide CJK + accents + emoji)
          (open-menu d #\f) (key d "enter")
-         (wait-for d "Text editor")
+         (wait-for d "scratch")
          (ctrl d #\a) (key d "del")
          (type-text d "日本語 café 🎉")
          (check d "wide/multi-script text renders" (and (found? d "日本語") (found? d "café")))
@@ -86,11 +86,11 @@
          ;; NB: %tool-note raises the REPL over the editor, so do Save-As (needs the
          ;; editor focused) before any note-producing action, and assert the others
          ;; via their transcript notes.
-         (open-menu d #\f) (key d "enter") (wait-for d "Text editor")
+         (open-menu d #\f) (key d "enter") (wait-for d "scratch")
          (ctrl d #\a) (key d "del") (type-text d "(defun foo")   ; cursor rests on the symbol
          (open-menu d #\e)
          (check d "Edit menu exposes Undo/Cut/Copy/Paste/Select all"
-                (and (found? d "Undo") (found? d "Cut") (found? d "Copy") (found? d "Paste") (found? d "Select all")))
+                (and (found? d "Undo") (found? d "Cut") (found? d "Copy") (found? d "Paste") (found? d "Select all") (found? d "History search")))
          (key d "esc")
          (open-menu d #\f) (menu-item d "Save as")               ; editor still focused (no note yet)
          (check d "Save dialog opens (Save file / Name field)" (and (wait-for d "Save file") (found? d "Name")))
@@ -105,7 +105,7 @@
          (check d "colour theme cycles to Dark" (wait-for d "colour theme: Dark"))
          (check d "status note auto-clears after a few seconds" (wait-gone d "colour theme: Dark" :timeout 8))
          (open-menu d #\w) (menu-item d "List")
-         (check d "window list dialog lists open windows" (and (wait-for d "Windows") (found? d "Text editor")))
+         (check d "window list dialog lists open windows" (and (wait-for d "Windows") (found? d "scratch")))
          (key d "esc")
          (open-menu d #\t) (key d "enter") (wait-for d "Lisp REPL")   ; raise/focus a REPL, give it output
          (type-text d "(* 7 9)") (key d "enter")
@@ -116,7 +116,7 @@
          ;; 8. Settings controls are wired live, + Ctrl-U clears an input field.
          ;; Open Settings by KEYBOARD (Alt-o + Enter): clicking the first menu item
          ;; over a window lets the mouse-release steal focus and it won't open.
-         (open-menu d #\f) (key d "enter") (wait-for d "Text editor")
+         (open-menu d #\f) (key d "enter") (wait-for d "scratch")
          (ctrl d #\a) (key d "del") (type-text d "(defun a ())")
          (open-menu d #\o) (key d "enter")
          (check d "Settings opens with a Colour-theme radio" (wait-for d "Colour theme"))
@@ -132,7 +132,7 @@
          (key d "esc")
 
          ;; 9. TLabel: clicking a linked label focuses its control (Replace dialog).
-         (open-menu d #\f) (key d "enter") (wait-for d "Text editor")
+         (open-menu d #\f) (key d "enter") (wait-for d "scratch")
          (ctrl d #\a) (key d "del") (type-text d "hello world")
          (click-text d "Replace")                            ; editor status chip -> Replace dialog
          (check d "Replace dialog opens" (wait-for d "Replace:"))
@@ -152,7 +152,7 @@
          (check d "wide output shows a horizontal scrollbar" (or (found? d "◄") (found? d "►")))
 
          ;; 11. Turbo Vision Window-menu keyboard shortcuts (modifier-aware accelerators)
-         (ctrl d #\n) (wait-for d "Text editor")             ; a fresh editor on top (doesn't bind Ctrl-F5)
+         (ctrl d #\n) (wait-for d "scratch")             ; a fresh editor on top (doesn't bind Ctrl-F5)
          (key d "c-f5") (check d "Ctrl-F5 enters Size/move mode" (wait-for d "Size/move"))
          (key d "enter")
          (alt d #\0) (check d "Alt-0 opens the window list" (wait-for d "Windows"))
