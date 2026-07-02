@@ -25,6 +25,7 @@ PYTHON ?= python3
 # build works without any global ocicl/ASDF config.
 define asdf-make
 $(SBCL) --non-interactive \
+	--eval '(require :asdf)' \
 	--eval '(asdf:initialize-source-registry (list :source-registry (list :tree (uiop:getcwd)) (list :tree (merge-pathnames "../" (uiop:getcwd))) :inherit-configuration))' \
 	--eval '(asdf:make :$(1))' \
 	--eval '(uiop:quit 0)'
@@ -60,6 +61,7 @@ test: test-lisp test-pty test-pty-tv2
 # FiveAM is a test-only dependency, restored by `ocicl install`.
 test-lisp: tvlisp.asd $(wildcard src/*.lisp) tests/tvlisp-tests.lisp
 	$(SBCL) --non-interactive \
+	--eval '(require :asdf)' \
 		--eval '(asdf:initialize-source-registry (list :source-registry (list :tree (uiop:getcwd)) (list :tree (merge-pathnames "../" (uiop:getcwd))) :inherit-configuration))' \
 		--eval '(handler-bind ((warning (function muffle-warning))) (asdf:load-system :tvlisp/tests))' \
 		--eval '(sb-ext:exit :code (if (zerop (tvision-tvlisp-tests:run-tests)) 0 1))'
