@@ -56,8 +56,8 @@ jobs:
           (cd common-lisp/tvision && ocicl install)
           (cd common-lisp/tvlisp  && ocicl install)
 
-      # make test = test-lisp (FiveAM) + test-pty (classic ./tvlisp, Python) +
-      # test-pty-tv2 (./tvlisp-tv2 driven by the Lisp-native tvision-pty-driver)
+      # make test = test-pty-tv2: build ./tvlisp-tv2 (on the tv2 framework) and
+      # drive it through a pty with the Lisp-native tvision-pty-driver
       - name: Run tests
         working-directory: common-lisp/tvlisp
         run: make test
