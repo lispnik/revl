@@ -1,68 +1,53 @@
 # tvlisp — a Lisp REPL / mini-IDE
 
-`tvlisp` is a dedicated Lisp environment built on
-[**tvision**](https://github.com/lispnik/tvision), the Common Lisp port of
-Borland's Turbo Vision text-mode UI framework.  It uses an in-process,
-micros-style backend (the same operation set Lem gets from micros, but built
-directly on SBCL built-ins with zero external deps), so the running TUI *is* the
-Lisp image being driven.
+`tvlisp` is a dedicated Common Lisp environment built on
+[**tv2**](https://github.com/lispnik/tvision), a CLOS-native text-mode UI
+framework.  It uses an in-process, micros-style backend (the same operation set
+Lem gets from micros, but built directly on SBCL built-ins with zero external
+deps), so the running TUI *is* the Lisp image being driven.  The IDE is a
+Turbo-Vision-style desktop — a menu bar, a status bar, and overlapping windows: a
+REPL with a SLIME `sldb`-style debugger, a syntax-highlighting editor, a git-aware
+project tree, an object inspector, an HTML browser, and code-intelligence tools
+(completion, paredit, source navigation, tracing / stepping / profiling, and a
+live HyperSpec lookup).
 
 ## Requirements
 
 - **SBCL** — uses SBCL-specific introspection, threads, and `sb-introspect`.
-- **ocicl** for system management, plus the
-  [**tvision**](https://github.com/lispnik/tvision) framework cloned as a sibling
-  project at `../tvision` (tvision is not on ocicl).  `./systems/tvision`
-  symlinks to it so ASDF resolves the dependency from this project; `make` also
-  adds the project tree to the source registry explicitly, so the build works
-  without any global config:
+- The **[tvision](https://github.com/lispnik/tvision) framework** (which provides
+  the `tv2` toolkit) cloned as a sibling project at `../tvision` (it is not on
+  ocicl).  `./systems/tvision` symlinks to it so ASDF resolves it from this
+  project; `make` also adds the project tree to the source registry, so the build
+  works without any global config:
 
   ```sh
   git clone git@github.com:lispnik/tvision.git   # alongside this tvlisp checkout
   ```
-- The **binary has no external dependencies** (only SBCL + tvision).  Only the
-  test suite pulls in [FiveAM](https://github.com/lispci/fiveam) (pinned in
-  `ocicl.csv`; run `ocicl install` to restore it on a fresh checkout).
+- **No external Lisp dependencies** to build, run, or test — only SBCL + tv2.
+  tvlisp's framework-agnostic Lisp logic lives in a shared `tvlisp-logic` system,
+  and the binary is dumped from the `tvlisp` system.
 
 ## Building & running
 
 ```sh
 make            # build ./tvlisp
 make run        # build and run
-make test       # unit suite (88 checks) + end-to-end pty smoke test (11 checks)
-make test-lisp  # just the headless unit suite (REPL/debugger/inspector/threads)
+make test       # end-to-end pty smoke suite (46 checks) through a pseudo-terminal
 make clean      # remove the binary and this project's fasl cache
 
 # or directly, without make (from this directory):
 sbcl --eval '(asdf:make :tvlisp)' --quit     # -> ./tvlisp
-# or from Lisp:  (asdf:load-system :tvlisp) (tvision-tvlisp:main)
 ```
 
 `asdf:make` uses the `program-op` / `build-pathname` / `entry-point` settings in
-`tvlisp.asd` to dump a self-contained binary.
+`tvlisp.asd` to dump a self-contained `./tvlisp` binary that runs on the **tv2**
+CLOS-native framework (reactive metaclass, CLOS event dispatch, named commands +
+keymaps, a layout DSL, MOP persistence, a worker→UI bridge — see
+[`../tvision/tv2/README.md`](../tvision/tv2/README.md)).
 
-### Running on the tv2 CLOS kernel
-
-`tvlisp` is built on the original `tvision` framework.  Every tvlisp window has
-also been rebuilt on **tv2**, a clean-break CLOS-native re-architecture of the
-framework (reactive metaclass, CLOS event dispatch, named commands + keymaps, a
-layout DSL, MOP persistence, a worker→UI bridge — see
-[`../tvision/tv2/README.md`](../tvision/tv2/README.md)).  The `tvlisp/tv2` system
-launches that IDE — a menu of the ported windows (REPL, editor, project manager,
-browsers, thread monitor, HTML browser):
-
-```sh
-make tvlisp-tv2   # build ./tvlisp-tv2 (runs on the tv2 kernel)
-make run-tv2      # build and run it
-```
-
-It is a separate system/binary, so the classic build above is untouched.  The
-IDE is a Turbo-Vision-style desktop — a menu bar, a status bar, and the ported
-windows (REPL with the SLDB debugger, the syntax-highlighting editor, the git
-project tree, the HTML browser with find-in-page).  The demo below tours the
-complete IDE: the full menu bar, paredit + line numbers in the editor, source
-navigation (go-to-definition), and a live HyperSpec lookup — alongside the
-tracing / stepping / profiling / inspector tools migrated earlier:
+The demo below tours the complete IDE: the full menu bar, paredit + line numbers
+in the editor, source navigation (go-to-definition), and a live HyperSpec lookup
+— alongside the tracing / stepping / profiling / inspector tools:
 
 ![tvlisp on the tv2 CLOS kernel](media/tv2-ide.gif)
 
@@ -364,9 +349,9 @@ keys:
   ![Find and Replace in an editor window](media/find-replace.gif)
 
   **Right-click context menu**,
-  **open a file in an editor window** (a `TEditWindow`) via a
-  reusable `TFileDialog` — type a path or browse: Enter on a directory descends
-  into it, Enter on `..` goes back up, Enter on a file opens it.
+  **open a file in an editor window** via a reusable file dialog — type a path or
+  browse: Enter on a directory descends into it, Enter on `..` goes back up, Enter
+  on a file opens it.
 - **Editor gutter** — file editor windows carry a left margin with optional
   **line numbers** (Options ▸ Line numbers; the current line is highlighted) and
   a **git diff** mark on each line added (green bar), changed (yellow bar), or
