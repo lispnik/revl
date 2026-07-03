@@ -20,11 +20,11 @@ jobs:
         with:
           repository: lispnik/revision
           path: common-lisp/revision
-      - name: Checkout tvision-pty-driver
+      - name: Checkout revision-pty-driver
         uses: actions/checkout@v4
         with:
-          repository: lispnik/tvision-pty-driver
-          path: common-lisp/tvision-pty-driver
+          repository: lispnik/revision-pty-driver
+          path: common-lisp/revision-pty-driver
 
       - name: Install SBCL
         run: sudo apt-get update && sudo apt-get install -y sbcl make git python3
@@ -57,7 +57,7 @@ jobs:
           (cd common-lisp/revl  && ocicl install)
 
       # make test = test-pty: build ./revl (on the revision framework) and
-      # drive it through a pty with the Lisp-native tvision-pty-driver
+      # drive it through a pty with the Lisp-native revision-pty-driver
       - name: Run tests
         working-directory: common-lisp/revl
         run: make test

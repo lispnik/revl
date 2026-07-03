@@ -1,7 +1,7 @@
-;;;; pty_smoke_tv2.lisp --- end-to-end pty smoke tests for the revl binary.
+;;;; pty_smoke.lisp --- end-to-end pty smoke tests for the revl binary.
 ;;;;
 ;;;; Drives the *built* ./revl through a pseudo-terminal (via the
-;;;; tvision-pty-driver sibling project) and asserts on the reconstructed screen,
+;;;; revision-pty-driver sibling project) and asserts on the reconstructed screen,
 ;;;; so the integrated IDE flows -- the consolidated framed menu, the SLIME-style
 ;;;; REPL with clickable presentations + completion, the editor's frame indicator,
 ;;;; the call tree, an SBCL tool and Unicode editing -- are guarded too.
@@ -11,12 +11,12 @@
 ;;;; window beneath and steal focus.
 
 (require :asdf)
-(let ((asd (truename (format nil "~a../../tvision-pty-driver/tvision-pty-driver.asd"
+(let ((asd (truename (format nil "~a../../revision-pty-driver/revision-pty-driver.asd"
                              (directory-namestring *load-pathname*)))))
   (asdf:load-asd asd))
-(handler-bind ((warning #'muffle-warning)) (asdf:load-system :tvision-pty-driver))
+(handler-bind ((warning #'muffle-warning)) (asdf:load-system :revision-pty-driver))
 
-(defpackage #:revl-smoke (:use #:common-lisp #:tvision-pty-driver))
+(defpackage #:revl-smoke (:use #:common-lisp #:revision-pty-driver))
 (in-package #:revl-smoke)
 
 (defun binary ()
