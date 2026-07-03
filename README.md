@@ -272,14 +272,15 @@ keys:
   live in the image).  **Tab** re-indents the current line (or the
   selected lines) — or, when the cursor follows a symbol, **completes** it (see
   below); **Alt-Q** re-indents the whole top-level form.  **Undo /
-  redo** (Ctrl-Z / Ctrl-Y, also on the Edit menu and the right-click context
-  menu).
+  redo** (Undo = **Alt+Bksp** or Ctrl-Z, Redo = Ctrl-Y; also on the Edit menu and
+  the right-click context menu).
 - **Text selection** — drag with the mouse, or hold **Shift** with any
   navigation key (Left/Right, Up/Down, Home/End, PgUp/PgDn, and Ctrl-Left/Right
   by word) to extend the selection; a plain navigation key collapses it.
   **Select all** (Ctrl-A, also on the Edit and context menus).  The selection
   is drawn as a clear reverse-video highlight, and **Cut / Copy / Paste**
-  (Ctrl-X/C/V or the Edit / context menus) and typing operate on it.  The
+  (the CUA keys **Shift+Del / Ctrl+Ins / Shift+Ins**, with Ctrl-X/C/V as a fallback,
+  or the Edit / context menus) and typing operate on it.  The
   clipboard is shared, so you can copy in one window and paste into another.
 
   ![Shift with navigation keys extends the (reverse-video) text selection](media/shift-selection.gif)
