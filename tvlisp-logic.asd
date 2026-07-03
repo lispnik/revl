@@ -17,4 +17,5 @@
                 :components ((:file "package")        ; the TVISION-TVLISP app package
                              (:file "lisp-text")
                              (:file "repl-backend")
+                             (:file "inspect")         ; object->outline (inspector model)
                              (:file "app-logic")))))   ; sexp/git/grep/profile/http/CLHS
