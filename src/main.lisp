@@ -1,6 +1,6 @@
 ;;;; revision-main.lisp --- revl running on the experimental revision CLOS kernel.
 ;;;;
-;;;; The classic revl IDE is built on the original `tvision' framework.  Every
+;;;; The classic revl IDE is built on the original `revision' framework.  Every
 ;;;; revl window has also been rebuilt on `revision', the CLOS-native re-architecture
 ;;;; of the framework (see ../revision/revision/README.md).  This is the entry point
 ;;;; for that build: it launches the revision IDE shell (a menu of the ported
@@ -17,7 +17,7 @@
 ;;; --- migration: reuse the classic revl app's real logic on revision windows ----
 ;;; Stage 1: the editor's Lisp indentation.  revision's editor calls *LISP-INDENTER*
 ;;; for a fresh line; we point it at revl's actual indent engine
-;;; (TVISION::%LISP-INDENT-AT), so the revision editor indents exactly like revl.
+;;; (REVISION::%LISP-INDENT-AT), so the revision editor indents exactly like revl.
 
 (defun %line-offset (te line)
   "Char offset where LINE begins in TE's buffer."
@@ -26,19 +26,19 @@
 (defun revl-indent (te)
   "Indent a fresh line using the classic revl Lisp indenter."
   (or (ignore-errors
-       (funcall (find-symbol "%LISP-INDENT-AT" :tvision)
+       (funcall (find-symbol "%LISP-INDENT-AT" :revision)
                 (revision:te-text te) (%line-offset te (revision::te-cy te))))
       0))
 
 ;;; Stage 2: the REPL evaluator.  Replace revision's hand-rolled eval loop with
-;;; revl's actual TVISION:REPL-BACKEND-EVAL — its read/eval/print, the per-
+;;; revl's actual REVISION:REPL-BACKEND-EVAL — its read/eval/print, the per-
 ;;; listener CL history vars (-, +/++/+++, */**/***, ///), and sticky IN-PACKAGE
 ;;; — while keeping revision's SLDB debugger as the error handler.
 
 (defun revl-repl-eval (win input)
   "Worker thread: evaluate INPUT for the revision REPL window WIN using revl's
 backend, then post output + results + new package back through revision's UI bridge."
-  (let* ((backend (find-symbol "REPL-BACKEND-EVAL" :tvision))
+  (let* ((backend (find-symbol "REPL-BACKEND-EVAL" :revision))
          (hist (revision:repl-hist-vars win)))
     (multiple-value-bind (output results new-pkg errored new-hist)
         (restart-case
@@ -104,7 +104,7 @@ backend, then post output + results + new package back through revision's UI bri
 (defun revl-editor-completions (te token)
   "Completion candidates for the prefix TOKEN at the cursor, resolved in the
 package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
-  (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :tvision))
+  (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :revision))
         (buf-pkg  (find-symbol "%BUFFER-IN-PACKAGE" :revl-logic))
         (upto     (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te))))
     (let ((pkg (or (and buf-pkg (ignore-errors (find-package (funcall buf-pkg (revision:te-text te) upto))))
@@ -113,7 +113,7 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
 
 (defun revl-repl-completions (token package)
   "REPL Tab-completion candidates for TOKEN in the listener's PACKAGE."
-  (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :tvision)))
+  (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :revision)))
     (and complete (ignore-errors (funcall complete token (or package *package*))))))
 
 ;;; Stage 5: project manager.  Two more revision hooks reuse revl's real PM logic:
@@ -225,10 +225,10 @@ per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
         revision:*editor-eval-fn*        #'revl-editor-eval          ; stage 3: eval-defun / eval-region
         revision:*editor-completions-fn* #'revl-editor-completions   ; stage 4: symbol completion
         revision:*repl-completions-fn*   #'revl-repl-completions     ; REPL Tab completion
-        revision:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :tvision)   ; stage 4: bracket match
+        revision:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :revision)   ; stage 4: bracket match
         revision:*project-status-fn*     #'revl-project-status       ; stage 5: git status badges
         revision:*project-grep-fn*       #'revl-project-grep         ; stage 5: find-in-files
-        revision:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :tvision)   ; stage 7: object inspector
+        revision:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :revision)   ; stage 7: object inspector
                                         revision:*object->outline-fn*)
         revision:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :revl-logic)))   ; stage 8: sb-sprof profiler
                                       (and p (lambda (form package) (funcall p form package))))

@@ -7,13 +7,13 @@
 ;;;; through hooks (*REPL-EVAL-FN* / *REPL-COMPLETIONS-FN*).  The classic TReplView
 ;;;; that wraps it lives in src/repl.lisp.
 ;;;;
-;;;; Extends the TVISION package (the package belongs to the revision base).
+;;;; Extends the REVISION package (the package belongs to the revision base).
 
-(in-package #:tvision)
+(in-package #:revision)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(repl-backend-eval repl-backend-completions longest-common-prefix)
-          '#:tvision))
+          '#:revision))
 
 ;;; --- per-listener CL history variables -------------------------------------
 

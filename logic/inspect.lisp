@@ -6,10 +6,10 @@
 ;;;; both the classic TInspectorWindow and the revision inspector reuse it (the revision
 ;;;; IDE via *object->outline-fn*).  Extracted from src/repl.lisp.
 
-(in-package #:tvision)
+(in-package #:revision)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(object->outline) '#:tvision))
+  (export '(object->outline) '#:revision))
 
 ;;; --- object inspector (built on TOutline) ----------------------------------
 

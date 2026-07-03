@@ -8,13 +8,13 @@
 ;;;; view-coupled services (colouriser install, indent-line/-region/-sexp on a
 ;;;; live TTEXT-VIEW, match-paren-jump) live in src/lisp-text-view.lisp.
 ;;;;
-;;;; It extends the TVISION package (the package now belongs to the revision base), so
-;;;; the revision hooks can FIND-SYMBOL these by name in :TVISION.
+;;;; It extends the REVISION package (the package now belongs to the revision base), so
+;;;; the revision hooks can FIND-SYMBOL these by name in :REVISION.
 
-(in-package #:tvision)
+(in-package #:revision)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(*lisp-indent-hook*) '#:tvision))
+  (export '(*lisp-indent-hook*) '#:revision))
 
 ;;; --- bracket matching (offset-based) ---------------------------------------
 
