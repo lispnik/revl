@@ -9,7 +9,7 @@ SBCL ?= sbcl
 PYTHON ?= python3
 
 # Build SYSTEM with asdf:make.  We add this project AND the sibling framework
-# (../tvision, reachable via the parent tree) to the source registry so the
+# (../revision, reachable via the parent tree) to the source registry so the
 # build works without any global ocicl/ASDF config.
 define asdf-make
 $(SBCL) --non-interactive \
@@ -21,7 +21,7 @@ endef
 
 # Rebuild whenever the app entry, the revision framework (base + kernel), or the
 # shared revl-logic changes.
-REVISION   := $(wildcard ../tvision/revision/*.lisp) $(wildcard ../tvision/base/*.lisp) ../tvision/revision.asd
+REVISION   := $(wildcard ../revision/revision/*.lisp) $(wildcard ../revision/base/*.lisp) ../revision/revision.asd
 LOGIC := $(wildcard logic/*.lisp) revl-logic.asd
 
 .DEFAULT_GOAL := all

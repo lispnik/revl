@@ -2,7 +2,7 @@
 ;;;;
 ;;;; The classic revl IDE is built on the original `tvision' framework.  Every
 ;;;; revl window has also been rebuilt on `revision', the CLOS-native re-architecture
-;;;; of the framework (see ../tvision/revision/README.md).  This is the entry point
+;;;; of the framework (see ../revision/revision/README.md).  This is the entry point
 ;;;; for that build: it launches the revision IDE shell (a menu of the ported
 ;;;; windows).  It lives in its own system (`revl/revision') so the classic build
 ;;;; and binary are untouched.

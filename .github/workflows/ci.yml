@@ -18,8 +18,8 @@ jobs:
       - name: Checkout tvision (framework + revision kernel)
         uses: actions/checkout@v4
         with:
-          repository: lispnik/tvision
-          path: common-lisp/tvision
+          repository: lispnik/revision
+          path: common-lisp/revision
       - name: Checkout tvision-pty-driver
         uses: actions/checkout@v4
         with:
@@ -37,8 +37,8 @@ jobs:
         with:
           path: |
             common-lisp/revl/systems
-            common-lisp/tvision/systems
-          key: ocicl-deps-${{ runner.os }}-${{ hashFiles('common-lisp/revl/ocicl.csv', 'common-lisp/tvision/systems.csv') }}
+            common-lisp/revision/systems
+          key: ocicl-deps-${{ runner.os }}-${{ hashFiles('common-lisp/revl/ocicl.csv', 'common-lisp/revision/systems.csv') }}
           restore-keys: |
             ocicl-deps-${{ runner.os }}-
 
@@ -53,7 +53,7 @@ jobs:
 
       - name: Restore Lisp dependencies (tvision + revl)
         run: |
-          (cd common-lisp/tvision && ocicl install)
+          (cd common-lisp/revision && ocicl install)
           (cd common-lisp/revl  && ocicl install)
 
       # make test = test-pty: build ./revl (on the revision framework) and

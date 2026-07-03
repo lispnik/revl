@@ -1,6 +1,6 @@
 ;;;; revl.asd --- a SLIME-class Lisp IDE on the revision CLOS-native framework.
 ;;;;
-;;;; revl is built on `revision' (../tvision/revision), the CLOS-native framework, plus
+;;;; revl is built on `revision' (../revision/revision), the CLOS-native framework, plus
 ;;;; `revl-logic' (its framework-agnostic Lisp logic).  ocicl resolves the
 ;;;; siblings through ./systems and `make' adds the project tree to the ASDF
 ;;;; source registry, so no global config is required.

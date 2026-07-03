@@ -1,7 +1,7 @@
 # revl — a Lisp REPL / mini-IDE
 
 `revl` is a dedicated Common Lisp environment built on
-[**revision**](https://github.com/lispnik/tvision), a CLOS-native text-mode UI
+[**revision**](https://github.com/lispnik/revision), a CLOS-native text-mode UI
 framework.  It uses an in-process, micros-style backend (the same operation set
 Lem gets from micros, but built directly on SBCL built-ins with zero external
 deps), so the running TUI *is* the Lisp image being driven.  The IDE is a
@@ -14,14 +14,14 @@ live HyperSpec lookup).
 ## Requirements
 
 - **SBCL** — uses SBCL-specific introspection, threads, and `sb-introspect`.
-- The **[tvision](https://github.com/lispnik/tvision) framework** (which provides
-  the `revision` toolkit) cloned as a sibling project at `../tvision` (it is not on
-  ocicl).  `./systems/tvision` symlinks to it so ASDF resolves it from this
+- The **[revision](https://github.com/lispnik/revision) framework** (the CLOS-native
+  toolkit) cloned as a sibling project at `../revision` (it is not on
+  ocicl).  `./systems/revision` symlinks to it so ASDF resolves it from this
   project; `make` also adds the project tree to the source registry, so the build
   works without any global config:
 
   ```sh
-  git clone git@github.com:lispnik/tvision.git   # alongside this revl checkout
+  git clone git@github.com:lispnik/revision.git   # alongside this revl checkout
   ```
 - **No external Lisp dependencies** to build, run, or test — only SBCL + revision.
   revl's framework-agnostic Lisp logic lives in a shared `revl-logic` system,
@@ -43,7 +43,7 @@ sbcl --eval '(asdf:make :revl)' --quit     # -> ./revl
 `revl.asd` to dump a self-contained `./revl` binary that runs on the **revision**
 CLOS-native framework (reactive metaclass, CLOS event dispatch, named commands +
 keymaps, a layout DSL, MOP persistence, a worker→UI bridge — see
-[`../tvision/revision/README.md`](../tvision/revision/README.md)).
+[`../revision/revision/README.md`](../revision/revision/README.md)).
 
 The demo below tours the complete IDE: the full menu bar, paredit + line numbers
 in the editor, source navigation (go-to-definition), and a live HyperSpec lookup
@@ -511,4 +511,4 @@ select a window, **Alt-X** quits, and **resizing the terminal** reflows the UI.
 
 ## License
 
-MIT.  Built on the [tvision](https://github.com/lispnik/tvision) framework.
+MIT.  Built on the [revision](https://github.com/lispnik/revision) framework.
