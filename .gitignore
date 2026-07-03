@@ -1,5 +1,6 @@
 # build artifacts
 /revl
+/tvlisp
 
 # macOS
 .DS_Store
