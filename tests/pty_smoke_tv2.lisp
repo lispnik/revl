@@ -1,7 +1,6 @@
-;;;; pty_smoke_tv2.lisp --- end-to-end pty smoke tests for the tvlisp-tv2 binary.
+;;;; pty_smoke_tv2.lisp --- end-to-end pty smoke tests for the tvlisp binary.
 ;;;;
-;;;; tests/tvlisp-tests.lisp covers the framework-agnostic logic in isolation;
-;;;; this drives the *built* ./tvlisp-tv2 through a pseudo-terminal (via the
+;;;; Drives the *built* ./tvlisp through a pseudo-terminal (via the
 ;;;; tvision-pty-driver sibling project) and asserts on the reconstructed screen,
 ;;;; so the integrated IDE flows -- the consolidated framed menu, the SLIME-style
 ;;;; REPL with clickable presentations + completion, the editor's frame indicator,
@@ -22,7 +21,7 @@
 
 (defun binary ()
   (or (sb-ext:posix-getenv "TVLISP_TV2_BIN")
-      (namestring (truename (format nil "~a../tvlisp-tv2" (directory-namestring *load-pathname*))))))
+      (namestring (truename (format nil "~a../tvlisp" (directory-namestring *load-pathname*))))))
 
 (let ((d (launch (binary) :cols 130 :rows 30)))
   (unwind-protect
@@ -190,4 +189,4 @@
          (check d "Window > Close all removes every window"
                 (and (wait-gone d "Emoji palette" :timeout 3) (not (found? d "Lisp REPL")))))
     (quit-driver d))
-  (sb-ext:exit :code (report d :title "tvlisp-tv2 pty smoke")))
+  (sb-ext:exit :code (report d :title "tvlisp pty smoke")))

@@ -5,7 +5,7 @@
 ;;;; siblings through ./systems and `make' adds the project tree to the ASDF
 ;;;; source registry, so no global config is required.
 ;;;;
-;;;; `asdf:make :tvlisp/tv2` dumps the standalone `tvlisp-tv2' executable.
+;;;; `asdf:make :tvlisp` dumps the standalone `tvlisp' executable.
 
 (asdf:defsystem "tvlisp"
   :description "tvlisp: a SLIME-class Common Lisp IDE on the tv2 framework."
@@ -15,7 +15,7 @@
   :depends-on ("tv2" "tvlisp-logic")
   :serial t
   :build-operation "program-op"
-  :build-pathname "tvlisp-tv2"
-  :entry-point "tvlisp-tv2:toplevel"
+  :build-pathname "tvlisp"
+  :entry-point "tvlisp-tv2:toplevel"   ; TVLISP-TV2 is the entry package (see src/tv2-main.lisp)
   :components ((:module "src"
                 :components ((:file "tv2-main")))))

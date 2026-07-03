@@ -6,7 +6,7 @@ on:
 
 jobs:
   test:
-    name: tvlisp + tvlisp-tv2 (headless + pty)
+    name: tvlisp (pty smoke)
     runs-on: ubuntu-latest
     steps:
       # lay the three projects out as siblings under common-lisp/, the layout the
@@ -56,7 +56,7 @@ jobs:
           (cd common-lisp/tvision && ocicl install)
           (cd common-lisp/tvlisp  && ocicl install)
 
-      # make test = test-pty-tv2: build ./tvlisp-tv2 (on the tv2 framework) and
+      # make test = test-pty: build ./tvlisp (on the tv2 framework) and
       # drive it through a pty with the Lisp-native tvision-pty-driver
       - name: Run tests
         working-directory: common-lisp/tvlisp

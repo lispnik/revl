@@ -1,6 +1,5 @@
 # build artifacts
 /tvlisp
-/tvlisp-tv2
 
 # macOS
 .DS_Store

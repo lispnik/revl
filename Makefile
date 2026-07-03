@@ -3,7 +3,7 @@
 # tvlisp is dumped by ASDF's `program-op' (configured via :build-operation /
 # :build-pathname / :entry-point in tvlisp.asd):
 #
-#   tvlisp-tv2  <- system tvlisp/tv2   (entry tvlisp-tv2:toplevel)
+#   tvlisp  <- system tvlisp   (entry tvlisp-tv2:toplevel)
 
 SBCL ?= sbcl
 PYTHON ?= python3
@@ -25,30 +25,30 @@ TV2   := $(wildcard ../tvision/tv2/*.lisp) $(wildcard ../tvision/base/*.lisp) ..
 LOGIC := $(wildcard logic/*.lisp) tvlisp-logic.asd
 
 .DEFAULT_GOAL := all
-.PHONY: all clean run run-tv2 test test-pty-tv2 help
+.PHONY: all clean run test test-pty help
 
-all: tvlisp-tv2
+all: tvlisp
 
 # tvlisp on the tv2 CLOS-native framework.
-tvlisp-tv2: tvlisp.asd src/tv2-main.lisp $(TV2) $(LOGIC)
+tvlisp: tvlisp.asd src/tv2-main.lisp $(TV2) $(LOGIC)
 	$(call asdf-make,tvlisp)
 
-run run-tv2: tvlisp-tv2
-	./tvlisp-tv2
+run: tvlisp
+	./tvlisp
 
-# Full test: the tv2 pty smoke suite (end-to-end through a pseudo-terminal,
-# driven by the Lisp-native tvision-pty-driver sibling project).
-test: test-pty-tv2
+# Full test: the pty smoke suite (end-to-end through a pseudo-terminal, driven
+# by the Lisp-native tvision-pty-driver sibling project).
+test: test-pty
 
-test-pty-tv2: tvlisp-tv2 tests/pty_smoke_tv2.lisp
+test-pty: tvlisp tests/pty_smoke_tv2.lisp
 	$(SBCL) --script tests/pty_smoke_tv2.lisp
 
 clean:
-	rm -f tvlisp-tv2
+	rm -f tvlisp
 	rm -rf $(HOME)/.cache/common-lisp/*tvlisp* 2>/dev/null || true
 
 help:
-	@echo "make            build the tvlisp-tv2 binary"
+	@echo "make            build the tvlisp binary"
 	@echo "make run        build + run"
 	@echo "make test       pty smoke suite"
 	@echo "make clean      remove binary + fasl cache"
