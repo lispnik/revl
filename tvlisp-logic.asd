@@ -14,4 +14,5 @@
   :serial t
   :components ((:module "logic"
                 :serial t
-                :components ((:file "lisp-text")))))
+                :components ((:file "lisp-text")
+                             (:file "repl-backend")))))
