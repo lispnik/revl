@@ -14,5 +14,7 @@
   :serial t
   :components ((:module "logic"
                 :serial t
-                :components ((:file "lisp-text")
-                             (:file "repl-backend")))))
+                :components ((:file "package")        ; the TVISION-TVLISP app package
+                             (:file "lisp-text")
+                             (:file "repl-backend")
+                             (:file "app-logic")))))   ; sexp/git/grep/profile/http/CLHS
