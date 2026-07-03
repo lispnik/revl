@@ -9,7 +9,7 @@
   :author "Matthew Kennedy"
   :license "MIT"
   :version "0.1.0"
-  :depends-on ("tvision")
+  :depends-on ("tvision" "tvlisp-logic")
   :serial t
   ;; `asdf:make :tvlisp` dumps a standalone `tvlisp' REPL executable.
   :build-operation "program-op"
@@ -21,7 +21,7 @@
                 ;; application-level (not part of the core tvision library)
                 :components ((:file "threadmon")
                              (:file "repl")
-                             (:file "lisp-text")
+                             (:file "lisp-text-view")   ; view-coupled half; pure core is in tvlisp-logic
                              (:file "lisp-editor")
                              (:file "tvlisp")))))
 
