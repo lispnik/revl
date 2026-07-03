@@ -1,81 +1,81 @@
-;;;; tv2-main.lisp --- tvlisp running on the experimental tv2 CLOS kernel.
+;;;; revision-main.lisp --- tvlisp running on the experimental revision CLOS kernel.
 ;;;;
 ;;;; The classic tvlisp IDE is built on the original `tvision' framework.  Every
-;;;; tvlisp window has also been rebuilt on `tv2', the CLOS-native re-architecture
-;;;; of the framework (see ../tvision/tv2/README.md).  This is the entry point
-;;;; for that build: it launches the tv2 IDE shell (a menu of the ported
-;;;; windows).  It lives in its own system (`tvlisp/tv2') so the classic build
+;;;; tvlisp window has also been rebuilt on `revision', the CLOS-native re-architecture
+;;;; of the framework (see ../tvision/revision/README.md).  This is the entry point
+;;;; for that build: it launches the revision IDE shell (a menu of the ported
+;;;; windows).  It lives in its own system (`tvlisp/revision') so the classic build
 ;;;; and binary are untouched.
 
 (defpackage #:tvlisp-tv2
   (:use #:cl)
-  (:documentation "tvlisp on the tv2 kernel.")
+  (:documentation "tvlisp on the revision kernel.")
   (:export #:main #:toplevel))
 
 (in-package #:tvlisp-tv2)
 
-;;; --- migration: reuse the classic tvlisp app's real logic on tv2 windows ----
-;;; Stage 1: the editor's Lisp indentation.  tv2's editor calls *LISP-INDENTER*
+;;; --- migration: reuse the classic tvlisp app's real logic on revision windows ----
+;;; Stage 1: the editor's Lisp indentation.  revision's editor calls *LISP-INDENTER*
 ;;; for a fresh line; we point it at tvlisp's actual indent engine
-;;; (TVISION::%LISP-INDENT-AT), so the tv2 editor indents exactly like tvlisp.
+;;; (TVISION::%LISP-INDENT-AT), so the revision editor indents exactly like tvlisp.
 
 (defun %line-offset (te line)
   "Char offset where LINE begins in TE's buffer."
-  (loop for i below line sum (1+ (length (tv2::te-line te i)))))
+  (loop for i below line sum (1+ (length (revision::te-line te i)))))
 
 (defun tvlisp-indent (te)
   "Indent a fresh line using the classic tvlisp Lisp indenter."
   (or (ignore-errors
        (funcall (find-symbol "%LISP-INDENT-AT" :tvision)
-                (tv2:te-text te) (%line-offset te (tv2::te-cy te))))
+                (revision:te-text te) (%line-offset te (revision::te-cy te))))
       0))
 
-;;; Stage 2: the REPL evaluator.  Replace tv2's hand-rolled eval loop with
+;;; Stage 2: the REPL evaluator.  Replace revision's hand-rolled eval loop with
 ;;; tvlisp's actual TVISION:REPL-BACKEND-EVAL — its read/eval/print, the per-
 ;;; listener CL history vars (-, +/++/+++, */**/***, ///), and sticky IN-PACKAGE
-;;; — while keeping tv2's SLDB debugger as the error handler.
+;;; — while keeping revision's SLDB debugger as the error handler.
 
 (defun tvlisp-repl-eval (win input)
-  "Worker thread: evaluate INPUT for the tv2 REPL window WIN using tvlisp's
-backend, then post output + results + new package back through tv2's UI bridge."
+  "Worker thread: evaluate INPUT for the revision REPL window WIN using tvlisp's
+backend, then post output + results + new package back through revision's UI bridge."
   (let* ((backend (find-symbol "REPL-BACKEND-EVAL" :tvision))
-         (hist (tv2:repl-hist-vars win)))
+         (hist (revision:repl-hist-vars win)))
     (multiple-value-bind (output results new-pkg errored new-hist)
         (restart-case
             ;; route break (invoke-debugger) and single-step (step-condition --
-            ;; the SBCL stepper bypasses *debugger-hook*) to tv2's cross-thread
+            ;; the SBCL stepper bypasses *debugger-hook*) to revision's cross-thread
             ;; debugger too, so TRACE :break and (step ...) work in-UI
-            (let ((*debugger-hook* (lambda (c hook) (declare (ignore hook)) (tv2::%repl-debug win c))))
-              (handler-bind ((sb-ext:step-condition (lambda (c) (tv2::%repl-debug win c))))
-                (funcall backend input (tv2:repl-package win)
-                         (lambda (e) (tv2::%repl-debug win e))    ; reuse tv2's cross-thread SLDB debugger
+            (let ((*debugger-hook* (lambda (c hook) (declare (ignore hook)) (revision::%repl-debug win c))))
+              (handler-bind ((sb-ext:step-condition (lambda (c) (revision::%repl-debug win c))))
+                (funcall backend input (revision:repl-package win)
+                         (lambda (e) (revision::%repl-debug win e))    ; reuse revision's cross-thread SLDB debugger
                          hist)))
-          (tv2::repl-abort () (values "" nil (tv2:repl-package win) t hist)))   ; debugger's abort lands here
-      (setf (tv2:repl-hist-vars win) new-hist)
+          (revision::repl-abort () (values "" nil (revision:repl-package win) t hist)))   ; debugger's abort lands here
+      (setf (revision:repl-hist-vars win) new-hist)
       (let ((lastvals (car (last results))))                  ; remember the primary result (object clipboard)
         (when (and (not errored) lastvals)
-          (setf (tv2:repl-last-value win) (first lastvals) (tv2:repl-last-value-p win) t)))
+          (setf (revision:repl-last-value win) (first lastvals) (revision:repl-last-value-p win) t)))
       ;; pair each result object with its printed form so the transcript can show
       ;; it as a clickable presentation (SLY-style: click to inspect the object)
       (let ((result-entries (let ((*package* new-pkg))
                               (unless errored
                                 (loop for vals in results
                                       collect (if vals (mapcar (lambda (o) (cons o (prin1-to-string o))) vals) :none))))))
-        (tv2:run-on-ui
+        (revision:run-on-ui
          (lambda ()
-           (let ((sb (tv2:find-view win 'tv2::transcript)))
+           (let ((sb (revision:find-view win 'revision::transcript)))
              (when sb
                (when (plusp (length output))
-                 (tv2:scrollback-append sb output)
+                 (revision:scrollback-append sb output)
                  (unless (char= (char output (1- (length output))) #\Newline)
-                   (tv2:scrollback-append sb (string #\Newline))))
+                   (revision:scrollback-append sb (string #\Newline))))
                (dolist (entry result-entries)
                  (if (eq entry :none)
-                     (tv2:scrollback-append sb (format nil "; No values~%"))
+                     (revision:scrollback-append sb (format nil "; No values~%"))
                      (dolist (pair entry)
-                       (tv2:scrollback-present sb (format nil "=> ~a~%" (cdr pair)) (car pair)))))))
-           (setf (tv2:repl-package win) new-pkg (tv2:repl-busy win) nil)
-           (tv2::%repl-update-prompt win)))))))
+                       (revision:scrollback-present sb (format nil "=> ~a~%" (cdr pair)) (car pair)))))))
+           (setf (revision:repl-package win) new-pkg (revision:repl-busy win) nil)
+           (revision::%repl-update-prompt win)))))))
 
 ;;; Stage 3: eval-defun / eval-region.  The editor's Eval chip evaluates the
 ;;; selection (region) or, if none, the top-level form at the cursor — extracted
@@ -85,18 +85,18 @@ backend, then post output + results + new package back through tv2's UI bridge."
 
 (defun tvlisp-editor-eval (te)
   "Evaluate the region (or the top-level form at point) in the REPL."
-  (let* ((text (tv2:te-text te))
-         (sel  (tv2::te-selected-string te))
-         (off  (+ (%line-offset te (tv2::te-cy te)) (tv2::te-cx te)))
+  (let* ((text (revision:te-text te))
+         (sel  (revision::te-selected-string te))
+         (off  (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te)))
          (form (if (not (%blankp sel)) sel
                    (funcall (find-symbol "%TOPLEVEL-FORM-AT-OFFSET" :tvision-tvlisp) text off))))
     (unless (%blankp form)
-      (let ((repl (tv2:ensure-repl)))
+      (let ((repl (revision:ensure-repl)))
         (when repl
-          (tv2::dt-raise tv2:*desktop* repl) (tv2:invalidate tv2:*desktop*)   ; show the result
-          (tv2:repl-submit-string repl (string-trim '(#\Space #\Tab #\Newline #\Return) form)))))))
+          (revision::dt-raise revision:*desktop* repl) (revision:invalidate revision:*desktop*)   ; show the result
+          (revision:repl-submit-string repl (string-trim '(#\Space #\Tab #\Newline #\Return) form)))))))
 
-;;; Stage 4: editor structural ops.  Two more tv2 hooks reuse tvlisp's real Lisp
+;;; Stage 4: editor structural ops.  Two more revision hooks reuse tvlisp's real Lisp
 ;;; logic: package-aware symbol completion against the live image (tvlisp's
 ;;; REPL-BACKEND-COMPLETIONS, with the buffer's IN-PACKAGE via %BUFFER-IN-PACKAGE)
 ;;; and bracket matching (%PAREN-MATCH-OFFSET, which skips strings/comments).
@@ -106,8 +106,8 @@ backend, then post output + results + new package back through tv2's UI bridge."
 package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
   (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :tvision))
         (buf-pkg  (find-symbol "%BUFFER-IN-PACKAGE" :tvision-tvlisp))
-        (upto     (+ (%line-offset te (tv2::te-cy te)) (tv2::te-cx te))))
-    (let ((pkg (or (and buf-pkg (ignore-errors (find-package (funcall buf-pkg (tv2:te-text te) upto))))
+        (upto     (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te))))
+    (let ((pkg (or (and buf-pkg (ignore-errors (find-package (funcall buf-pkg (revision:te-text te) upto))))
                    *package*)))
       (and complete (ignore-errors (funcall complete token pkg))))))
 
@@ -116,7 +116,7 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
   (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :tvision)))
     (and complete (ignore-errors (funcall complete token (or package *package*))))))
 
-;;; Stage 5: project manager.  Two more tv2 hooks reuse tvlisp's real PM logic:
+;;; Stage 5: project manager.  Two more revision hooks reuse tvlisp's real PM logic:
 ;;; git status badges (%GIT-STATUS-MAP -> relpath/:modified/:added) and
 ;;; find-in-files (%PM-GREP -> git grep / grep -rnI, returning match locations).
 
@@ -130,7 +130,7 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
   (let ((grep (find-symbol "%PM-GREP" :tvision-tvlisp)))
     (and grep (funcall grep dir query))))
 
-;;; Stage 9: paredit / structural editing.  tv2's editor calls *PAREDIT-FN* with
+;;; Stage 9: paredit / structural editing.  revision's editor calls *PAREDIT-FN* with
 ;;; an op + the buffer text + cursor offset; we reuse tvlisp's real sexp layer
 ;;; (%SEXP-BOUNDS / %SEXP-SPAN-AT / %SEXP-SPANS / %INNER-LIST / %PARENT-SIBLINGS)
 ;;; to compute the new text + cursor, exactly as tvlisp's do-slurp/-barf/... do.
@@ -219,28 +219,28 @@ per PERM, reusing tvlisp's sexp rewriter.  Returns new TEXT, or NIL if unchanged
         (when edits (funcall %apply text edits))))))
 
 (defun install-tvlisp-logic ()
-  "Inject tvlisp's real logic into the tv2 toolkit (extended each migration stage)."
-  (setf tv2:*lisp-indenter*         #'tvlisp-indent               ; stage 1: editor indentation
-        tv2:*repl-eval-fn*          #'tvlisp-repl-eval            ; stage 2: REPL evaluator
-        tv2:*editor-eval-fn*        #'tvlisp-editor-eval          ; stage 3: eval-defun / eval-region
-        tv2:*editor-completions-fn* #'tvlisp-editor-completions   ; stage 4: symbol completion
-        tv2:*repl-completions-fn*   #'tvlisp-repl-completions     ; REPL Tab completion
-        tv2:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :tvision)   ; stage 4: bracket match
-        tv2:*project-status-fn*     #'tvlisp-project-status       ; stage 5: git status badges
-        tv2:*project-grep-fn*       #'tvlisp-project-grep         ; stage 5: find-in-files
-        tv2:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :tvision)   ; stage 7: object inspector
-                                        tv2:*object->outline-fn*)
-        tv2:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :tvision-tvlisp)))   ; stage 8: sb-sprof profiler
+  "Inject tvlisp's real logic into the revision toolkit (extended each migration stage)."
+  (setf revision:*lisp-indenter*         #'tvlisp-indent               ; stage 1: editor indentation
+        revision:*repl-eval-fn*          #'tvlisp-repl-eval            ; stage 2: REPL evaluator
+        revision:*editor-eval-fn*        #'tvlisp-editor-eval          ; stage 3: eval-defun / eval-region
+        revision:*editor-completions-fn* #'tvlisp-editor-completions   ; stage 4: symbol completion
+        revision:*repl-completions-fn*   #'tvlisp-repl-completions     ; REPL Tab completion
+        revision:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :tvision)   ; stage 4: bracket match
+        revision:*project-status-fn*     #'tvlisp-project-status       ; stage 5: git status badges
+        revision:*project-grep-fn*       #'tvlisp-project-grep         ; stage 5: find-in-files
+        revision:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :tvision)   ; stage 7: object inspector
+                                        revision:*object->outline-fn*)
+        revision:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :tvision-tvlisp)))   ; stage 8: sb-sprof profiler
                                       (and p (lambda (form package) (funcall p form package))))
-        tv2:*paredit-fn*            #'tvlisp-paredit                                         ; stage 9: paredit
-        tv2:*reorder-fn*            #'tvlisp-reorder                                         ; reorder args at call sites
-        tv2:*url-fetch-fn*          (find-symbol "%HTTP-GET" :tvision-tvlisp)                ; stage 13: fetch (curl)
-        tv2:*hyperspec-url-fn*      (find-symbol "HYPERSPEC-URL" :tvision-tvlisp)))          ; stage 13: CLHS map
+        revision:*paredit-fn*            #'tvlisp-paredit                                         ; stage 9: paredit
+        revision:*reorder-fn*            #'tvlisp-reorder                                         ; reorder args at call sites
+        revision:*url-fetch-fn*          (find-symbol "%HTTP-GET" :tvision-tvlisp)                ; stage 13: fetch (curl)
+        revision:*hyperspec-url-fn*      (find-symbol "HYPERSPEC-URL" :tvision-tvlisp)))          ; stage 13: CLHS map
 
 (defun main ()
-  "Run the tv2-based tvlisp IDE until the user quits the launcher."
+  "Run the revision-based tvlisp IDE until the user quits the launcher."
   (install-tvlisp-logic)
-  (tv2:run-app))
+  (revision:run-app))
 
 (defun toplevel ()
   "Dumped-executable entry point: run the IDE, report a fatal error cleanly, exit."

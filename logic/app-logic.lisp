@@ -1,10 +1,10 @@
 ;;;; app-logic.lisp --- tvlisp's framework-agnostic application logic.
 ;;;;
-;;;; The pure, view-free helpers the tv2 IDE reuses through hooks: sexp analysis
+;;;; The pure, view-free helpers the revision IDE reuses through hooks: sexp analysis
 ;;;; (paredit/reorder), git status + grep for the project manager, the sb-sprof
 ;;;; profiler, HTTP fetch (curl), the HyperSpec URL map, buffer package/form
-;;;; extraction.  Extracted from src/tvlisp.lisp (the classic app UI) so the tv2
-;;;; build need not load the classic view hierarchy.  Builds on tv2 + earlier
+;;;; extraction.  Extracted from src/tvlisp.lisp (the classic app UI) so the revision
+;;;; build need not load the classic view hierarchy.  Builds on revision + earlier
 ;;;; tvlisp-logic files alone.
 
 (in-package #:tvision-tvlisp)

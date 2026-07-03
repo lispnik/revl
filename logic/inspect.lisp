@@ -3,7 +3,7 @@
 ;;;; OBJECT->OUTLINE builds a depth-limited, cycle-safe, pageable outline-node
 ;;;; tree describing any Lisp object (slots via sb-mop, with per-cell setters).
 ;;;; Pure -- it produces a base OUTLINE-NODE tree with no view dependency -- so
-;;;; both the classic TInspectorWindow and the tv2 inspector reuse it (the tv2
+;;;; both the classic TInspectorWindow and the revision inspector reuse it (the revision
 ;;;; IDE via *object->outline-fn*).  Extracted from src/repl.lisp.
 
 (in-package #:tvision)

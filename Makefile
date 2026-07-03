@@ -1,4 +1,4 @@
-# Makefile --- build the tvlisp IDE (on the tv2 CLOS-native framework).
+# Makefile --- build the tvlisp IDE (on the revision CLOS-native framework).
 #
 # tvlisp is dumped by ASDF's `program-op' (configured via :build-operation /
 # :build-pathname / :entry-point in tvlisp.asd):
@@ -19,9 +19,9 @@ $(SBCL) --non-interactive \
 	--eval '(uiop:quit 0)'
 endef
 
-# Rebuild whenever the app entry, the tv2 framework (base + kernel), or the
+# Rebuild whenever the app entry, the revision framework (base + kernel), or the
 # shared tvlisp-logic changes.
-TV2   := $(wildcard ../tvision/tv2/*.lisp) $(wildcard ../tvision/base/*.lisp) ../tvision/tv2.asd
+REVISION   := $(wildcard ../tvision/revision/*.lisp) $(wildcard ../tvision/base/*.lisp) ../tvision/revision.asd
 LOGIC := $(wildcard logic/*.lisp) tvlisp-logic.asd
 
 .DEFAULT_GOAL := all
@@ -29,8 +29,8 @@ LOGIC := $(wildcard logic/*.lisp) tvlisp-logic.asd
 
 all: tvlisp
 
-# tvlisp on the tv2 CLOS-native framework.
-tvlisp: tvlisp.asd src/tv2-main.lisp $(TV2) $(LOGIC)
+# tvlisp on the revision CLOS-native framework.
+tvlisp: tvlisp.asd src/tv2-main.lisp $(REVISION) $(LOGIC)
 	$(call asdf-make,tvlisp)
 
 run: tvlisp

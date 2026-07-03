@@ -1,7 +1,7 @@
 # tvlisp — a Lisp REPL / mini-IDE
 
 `tvlisp` is a dedicated Common Lisp environment built on
-[**tv2**](https://github.com/lispnik/tvision), a CLOS-native text-mode UI
+[**revision**](https://github.com/lispnik/tvision), a CLOS-native text-mode UI
 framework.  It uses an in-process, micros-style backend (the same operation set
 Lem gets from micros, but built directly on SBCL built-ins with zero external
 deps), so the running TUI *is* the Lisp image being driven.  The IDE is a
@@ -15,7 +15,7 @@ live HyperSpec lookup).
 
 - **SBCL** — uses SBCL-specific introspection, threads, and `sb-introspect`.
 - The **[tvision](https://github.com/lispnik/tvision) framework** (which provides
-  the `tv2` toolkit) cloned as a sibling project at `../tvision` (it is not on
+  the `revision` toolkit) cloned as a sibling project at `../tvision` (it is not on
   ocicl).  `./systems/tvision` symlinks to it so ASDF resolves it from this
   project; `make` also adds the project tree to the source registry, so the build
   works without any global config:
@@ -23,7 +23,7 @@ live HyperSpec lookup).
   ```sh
   git clone git@github.com:lispnik/tvision.git   # alongside this tvlisp checkout
   ```
-- **No external Lisp dependencies** to build, run, or test — only SBCL + tv2.
+- **No external Lisp dependencies** to build, run, or test — only SBCL + revision.
   tvlisp's framework-agnostic Lisp logic lives in a shared `tvlisp-logic` system,
   and the binary is dumped from the `tvlisp` system.
 
@@ -40,16 +40,16 @@ sbcl --eval '(asdf:make :tvlisp)' --quit     # -> ./tvlisp
 ```
 
 `asdf:make` uses the `program-op` / `build-pathname` / `entry-point` settings in
-`tvlisp.asd` to dump a self-contained `./tvlisp` binary that runs on the **tv2**
+`tvlisp.asd` to dump a self-contained `./tvlisp` binary that runs on the **revision**
 CLOS-native framework (reactive metaclass, CLOS event dispatch, named commands +
 keymaps, a layout DSL, MOP persistence, a worker→UI bridge — see
-[`../tvision/tv2/README.md`](../tvision/tv2/README.md)).
+[`../tvision/revision/README.md`](../tvision/revision/README.md)).
 
 The demo below tours the complete IDE: the full menu bar, paredit + line numbers
 in the editor, source navigation (go-to-definition), and a live HyperSpec lookup
 — alongside the tracing / stepping / profiling / inspector tools:
 
-![tvlisp on the tv2 CLOS kernel](media/tv2-ide.gif)
+![tvlisp on the revision CLOS kernel](media/tv2-ide.gif)
 
 At a glance — the tools it ships (each detailed below):
 
@@ -474,7 +474,7 @@ button, and an **overwrite confirmation** before it replaces an existing file.
 - **Emoji palette** (Tools ▸ Emoji palette) — a read-only, scrollable list of
   emoji, each labelled with its Unicode name straight from SBCL's `CHAR-NAME`.
   Type to filter by name (`heart`, `rocket`, …); **Enter** or a click copies the
-  glyph to the tv2 clipboard (paste with Ctrl-V) and, via **OSC 52**, to the
+  glyph to the revision clipboard (paste with Ctrl-V) and, via **OSC 52**, to the
   terminal's system clipboard so you can paste it into any other app.
 
 ![Emoji palette: filter by Unicode name and copy a glyph to the clipboard](media/emoji-palette.gif)

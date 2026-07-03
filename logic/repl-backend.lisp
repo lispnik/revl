@@ -3,11 +3,11 @@
 ;;;; The framework-agnostic in-process "backend" the REPL view is built on (the
 ;;;; operation set Lem gets from micros/swank, but called directly since the TUI
 ;;;; *is* the Lisp image).  Pure read/eval/print + symbol completion + the CL
-;;;; history-variable machinery -- NO view dependency, so the tv2 REPL reuses it
+;;;; history-variable machinery -- NO view dependency, so the revision REPL reuses it
 ;;;; through hooks (*REPL-EVAL-FN* / *REPL-COMPLETIONS-FN*).  The classic TReplView
 ;;;; that wraps it lives in src/repl.lisp.
 ;;;;
-;;;; Extends the TVISION package (the package belongs to the tv2 base).
+;;;; Extends the TVISION package (the package belongs to the revision base).
 
 (in-package #:tvision)
 
