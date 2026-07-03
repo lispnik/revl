@@ -1,9 +1,9 @@
-# Makefile --- build the tvlisp IDE (on the revision CLOS-native framework).
+# Makefile --- build the revl IDE (on the revision CLOS-native framework).
 #
-# tvlisp is dumped by ASDF's `program-op' (configured via :build-operation /
-# :build-pathname / :entry-point in tvlisp.asd):
+# revl is dumped by ASDF's `program-op' (configured via :build-operation /
+# :build-pathname / :entry-point in revl.asd):
 #
-#   tvlisp  <- system tvlisp   (entry tvlisp-tv2:toplevel)
+#   revl  <- system revl   (entry revl:toplevel)
 
 SBCL ?= sbcl
 PYTHON ?= python3
@@ -20,35 +20,35 @@ $(SBCL) --non-interactive \
 endef
 
 # Rebuild whenever the app entry, the revision framework (base + kernel), or the
-# shared tvlisp-logic changes.
+# shared revl-logic changes.
 REVISION   := $(wildcard ../tvision/revision/*.lisp) $(wildcard ../tvision/base/*.lisp) ../tvision/revision.asd
-LOGIC := $(wildcard logic/*.lisp) tvlisp-logic.asd
+LOGIC := $(wildcard logic/*.lisp) revl-logic.asd
 
 .DEFAULT_GOAL := all
 .PHONY: all clean run test test-pty help
 
-all: tvlisp
+all: revl
 
-# tvlisp on the revision CLOS-native framework.
-tvlisp: tvlisp.asd src/tv2-main.lisp $(REVISION) $(LOGIC)
-	$(call asdf-make,tvlisp)
+# revl on the revision CLOS-native framework.
+revl: revl.asd src/main.lisp $(REVISION) $(LOGIC)
+	$(call asdf-make,revl)
 
-run: tvlisp
-	./tvlisp
+run: revl
+	./revl
 
 # Full test: the pty smoke suite (end-to-end through a pseudo-terminal, driven
 # by the Lisp-native tvision-pty-driver sibling project).
 test: test-pty
 
-test-pty: tvlisp tests/pty_smoke_tv2.lisp
-	$(SBCL) --script tests/pty_smoke_tv2.lisp
+test-pty: revl tests/pty_smoke.lisp
+	$(SBCL) --script tests/pty_smoke.lisp
 
 clean:
-	rm -f tvlisp
-	rm -rf $(HOME)/.cache/common-lisp/*tvlisp* 2>/dev/null || true
+	rm -f revl
+	rm -rf $(HOME)/.cache/common-lisp/*revl* 2>/dev/null || true
 
 help:
-	@echo "make            build the tvlisp binary"
+	@echo "make            build the revl binary"
 	@echo "make run        build + run"
 	@echo "make test       pty smoke suite"
 	@echo "make clean      remove binary + fasl cache"

@@ -6,15 +6,15 @@ on:
 
 jobs:
   test:
-    name: tvlisp (pty smoke)
+    name: revl (pty smoke)
     runs-on: ubuntu-latest
     steps:
       # lay the three projects out as siblings under common-lisp/, the layout the
       # Makefile's source-registry (:tree ../) and the pty suite expect.
-      - name: Checkout tvlisp
+      - name: Checkout revl
         uses: actions/checkout@v4
         with:
-          path: common-lisp/tvlisp
+          path: common-lisp/revl
       - name: Checkout tvision (framework + revision kernel)
         uses: actions/checkout@v4
         with:
@@ -36,9 +36,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            common-lisp/tvlisp/systems
+            common-lisp/revl/systems
             common-lisp/tvision/systems
-          key: ocicl-deps-${{ runner.os }}-${{ hashFiles('common-lisp/tvlisp/ocicl.csv', 'common-lisp/tvision/systems.csv') }}
+          key: ocicl-deps-${{ runner.os }}-${{ hashFiles('common-lisp/revl/ocicl.csv', 'common-lisp/tvision/systems.csv') }}
           restore-keys: |
             ocicl-deps-${{ runner.os }}-
 
@@ -51,13 +51,13 @@ jobs:
           ocicl version
           ocicl setup > /dev/null 2>&1 || true
 
-      - name: Restore Lisp dependencies (tvision + tvlisp)
+      - name: Restore Lisp dependencies (tvision + revl)
         run: |
           (cd common-lisp/tvision && ocicl install)
-          (cd common-lisp/tvlisp  && ocicl install)
+          (cd common-lisp/revl  && ocicl install)
 
-      # make test = test-pty: build ./tvlisp (on the revision framework) and
+      # make test = test-pty: build ./revl (on the revision framework) and
       # drive it through a pty with the Lisp-native tvision-pty-driver
       - name: Run tests
-        working-directory: common-lisp/tvlisp
+        working-directory: common-lisp/revl
         run: make test

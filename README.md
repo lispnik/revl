@@ -1,6 +1,6 @@
-# tvlisp — a Lisp REPL / mini-IDE
+# revl — a Lisp REPL / mini-IDE
 
-`tvlisp` is a dedicated Common Lisp environment built on
+`revl` is a dedicated Common Lisp environment built on
 [**revision**](https://github.com/lispnik/tvision), a CLOS-native text-mode UI
 framework.  It uses an in-process, micros-style backend (the same operation set
 Lem gets from micros, but built directly on SBCL built-ins with zero external
@@ -21,26 +21,26 @@ live HyperSpec lookup).
   works without any global config:
 
   ```sh
-  git clone git@github.com:lispnik/tvision.git   # alongside this tvlisp checkout
+  git clone git@github.com:lispnik/tvision.git   # alongside this revl checkout
   ```
 - **No external Lisp dependencies** to build, run, or test — only SBCL + revision.
-  tvlisp's framework-agnostic Lisp logic lives in a shared `tvlisp-logic` system,
-  and the binary is dumped from the `tvlisp` system.
+  revl's framework-agnostic Lisp logic lives in a shared `revl-logic` system,
+  and the binary is dumped from the `revl` system.
 
 ## Building & running
 
 ```sh
-make            # build ./tvlisp
+make            # build ./revl
 make run        # build and run
 make test       # end-to-end pty smoke suite (46 checks) through a pseudo-terminal
 make clean      # remove the binary and this project's fasl cache
 
 # or directly, without make (from this directory):
-sbcl --eval '(asdf:make :tvlisp)' --quit     # -> ./tvlisp
+sbcl --eval '(asdf:make :revl)' --quit     # -> ./revl
 ```
 
 `asdf:make` uses the `program-op` / `build-pathname` / `entry-point` settings in
-`tvlisp.asd` to dump a self-contained `./tvlisp` binary that runs on the **revision**
+`revl.asd` to dump a self-contained `./revl` binary that runs on the **revision**
 CLOS-native framework (reactive metaclass, CLOS event dispatch, named commands +
 keymaps, a layout DSL, MOP persistence, a worker→UI bridge — see
 [`../tvision/revision/README.md`](../tvision/revision/README.md)).
@@ -49,7 +49,7 @@ The demo below tours the complete IDE: the full menu bar, paredit + line numbers
 in the editor, source navigation (go-to-definition), and a live HyperSpec lookup
 — alongside the tracing / stepping / profiling / inspector tools:
 
-![tvlisp on the revision CLOS kernel](media/tv2-ide.gif)
+![revl on the revision CLOS kernel](media/tv2-ide.gif)
 
 At a glance — the tools it ships (each detailed below):
 
@@ -95,7 +95,7 @@ At a glance — the tools it ships (each detailed below):
   clobber one another or the global `cl:*`); `(in-package …)` sticks and the
   prompt reflects the current package.
 - **Persistent history, transcript, file loading.** Input history is saved to
-  `~/.tvlisp_history`; Up/Down recall it, **Ctrl-R** searches it.  File ▸ Load
+  `~/.revl_history`; Up/Down recall it, **Ctrl-R** searches it.  File ▸ Load
   file (F7) loads a `.lisp` file with captured output; Save transcript writes the
   buffer; Save/Restore session reopens your REPL windows and their packages.
 - **Arglist echo & a live status line.** As you type, the status line shows the
@@ -252,7 +252,7 @@ keys:
   tree (which, like the class-hierarchy and project-source trees, also takes
   **`/`** to prune to matching nodes and their ancestors).
 
-![The tvlisp statistical profiler: sortable results table and call-graph outline](media/profiler.gif)
+![The revl statistical profiler: sortable results table and call-graph outline](media/profiler.gif)
 
 ![The class browser: Goto def jumps to source, Inspect opens the object inspector](media/class-browser.gif)
 
@@ -416,7 +416,7 @@ keys:
     `grep -rnI`) and lists matches in a fuzzy-filterable picker; choosing one
     jumps to that file and line.
   - **Persistent & live.** Roots **and which folders are expanded** persist to
-    `~/.tvlisp_projects`; the window reopens itself on startup, single-instance
+    `~/.revl_projects`; the window reopens itself on startup, single-instance
     (Alt-P focuses it).  It auto-refreshes on idle, so files created/changed
     outside the IDE (and git state) show up on their own — like the editor's git
     gutter.  **R** removes a root from the list (files on disk untouched), **G**
@@ -502,7 +502,7 @@ Jump-to-source (go-to-definition, xref, compiler notes) uses the absolute
 pathnames SBCL recorded at build time.  If you move the binary away from its
 sources, those features still find the files by searching for the trailing path
 under the executable's directory, the current directory, and
-`tvision-tvlisp::*source-root*` (set it to your source tree to override).
+`revl-logic::*source-root*` (set it to your source tree to override).
 
 The mouse works throughout: click/drag a scroll bar, double-click a list item,
 drag a title bar, drag the bottom-right corner to resize, click `[×]`/`[↑]`, and

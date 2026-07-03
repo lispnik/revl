@@ -1,13 +1,13 @@
-;;;; app-logic.lisp --- tvlisp's framework-agnostic application logic.
+;;;; app-logic.lisp --- revl's framework-agnostic application logic.
 ;;;;
 ;;;; The pure, view-free helpers the revision IDE reuses through hooks: sexp analysis
 ;;;; (paredit/reorder), git status + grep for the project manager, the sb-sprof
 ;;;; profiler, HTTP fetch (curl), the HyperSpec URL map, buffer package/form
-;;;; extraction.  Extracted from src/tvlisp.lisp (the classic app UI) so the revision
+;;;; extraction.  Extracted from src/revl.lisp (the classic app UI) so the revision
 ;;;; build need not load the classic view hierarchy.  Builds on revision + earlier
-;;;; tvlisp-logic files alone.
+;;;; revl-logic files alone.
 
-(in-package #:tvision-tvlisp)
+(in-package #:revl-logic)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :sb-introspect)

@@ -1,10 +1,10 @@
 ;;;; lisp-text.lisp --- pure Common Lisp text intelligence (indent + paren match).
 ;;;;
-;;;; The framework-agnostic core of tvlisp's Lisp editing smarts: functions that
+;;;; The framework-agnostic core of revl's Lisp editing smarts: functions that
 ;;;; take a STRING (+ char offset) and return a result, with NO dependency on any
 ;;;; view.  This is what the revision editor reuses through hooks (*LISP-INDENTER* ->
 ;;;; %LISP-INDENT-AT, *PAREN-MATCHER* -> %PAREN-MATCH-OFFSET), so it lives in the
-;;;; shared `tvlisp-logic' system rather than the classic UI.  The classic,
+;;;; shared `revl-logic' system rather than the classic UI.  The classic,
 ;;;; view-coupled services (colouriser install, indent-line/-region/-sexp on a
 ;;;; live TTEXT-VIEW, match-paren-jump) live in src/lisp-text-view.lisp.
 ;;;;

@@ -1,42 +1,42 @@
-;;;; revision-main.lisp --- tvlisp running on the experimental revision CLOS kernel.
+;;;; revision-main.lisp --- revl running on the experimental revision CLOS kernel.
 ;;;;
-;;;; The classic tvlisp IDE is built on the original `tvision' framework.  Every
-;;;; tvlisp window has also been rebuilt on `revision', the CLOS-native re-architecture
+;;;; The classic revl IDE is built on the original `tvision' framework.  Every
+;;;; revl window has also been rebuilt on `revision', the CLOS-native re-architecture
 ;;;; of the framework (see ../tvision/revision/README.md).  This is the entry point
 ;;;; for that build: it launches the revision IDE shell (a menu of the ported
-;;;; windows).  It lives in its own system (`tvlisp/revision') so the classic build
+;;;; windows).  It lives in its own system (`revl/revision') so the classic build
 ;;;; and binary are untouched.
 
-(defpackage #:tvlisp-tv2
+(defpackage #:revl
   (:use #:cl)
-  (:documentation "tvlisp on the revision kernel.")
+  (:documentation "revl on the revision kernel.")
   (:export #:main #:toplevel))
 
-(in-package #:tvlisp-tv2)
+(in-package #:revl)
 
-;;; --- migration: reuse the classic tvlisp app's real logic on revision windows ----
+;;; --- migration: reuse the classic revl app's real logic on revision windows ----
 ;;; Stage 1: the editor's Lisp indentation.  revision's editor calls *LISP-INDENTER*
-;;; for a fresh line; we point it at tvlisp's actual indent engine
-;;; (TVISION::%LISP-INDENT-AT), so the revision editor indents exactly like tvlisp.
+;;; for a fresh line; we point it at revl's actual indent engine
+;;; (TVISION::%LISP-INDENT-AT), so the revision editor indents exactly like revl.
 
 (defun %line-offset (te line)
   "Char offset where LINE begins in TE's buffer."
   (loop for i below line sum (1+ (length (revision::te-line te i)))))
 
-(defun tvlisp-indent (te)
-  "Indent a fresh line using the classic tvlisp Lisp indenter."
+(defun revl-indent (te)
+  "Indent a fresh line using the classic revl Lisp indenter."
   (or (ignore-errors
        (funcall (find-symbol "%LISP-INDENT-AT" :tvision)
                 (revision:te-text te) (%line-offset te (revision::te-cy te))))
       0))
 
 ;;; Stage 2: the REPL evaluator.  Replace revision's hand-rolled eval loop with
-;;; tvlisp's actual TVISION:REPL-BACKEND-EVAL — its read/eval/print, the per-
+;;; revl's actual TVISION:REPL-BACKEND-EVAL — its read/eval/print, the per-
 ;;; listener CL history vars (-, +/++/+++, */**/***, ///), and sticky IN-PACKAGE
 ;;; — while keeping revision's SLDB debugger as the error handler.
 
-(defun tvlisp-repl-eval (win input)
-  "Worker thread: evaluate INPUT for the revision REPL window WIN using tvlisp's
+(defun revl-repl-eval (win input)
+  "Worker thread: evaluate INPUT for the revision REPL window WIN using revl's
 backend, then post output + results + new package back through revision's UI bridge."
   (let* ((backend (find-symbol "REPL-BACKEND-EVAL" :tvision))
          (hist (revision:repl-hist-vars win)))
@@ -79,67 +79,67 @@ backend, then post output + results + new package back through revision's UI bri
 
 ;;; Stage 3: eval-defun / eval-region.  The editor's Eval chip evaluates the
 ;;; selection (region) or, if none, the top-level form at the cursor — extracted
-;;; with tvlisp's real %TOPLEVEL-FORM-AT-OFFSET — in the desktop's REPL.
+;;; with revl's real %TOPLEVEL-FORM-AT-OFFSET — in the desktop's REPL.
 
 (defun %blankp (s) (zerop (length (string-trim '(#\Space #\Tab #\Newline #\Return) (or s "")))))
 
-(defun tvlisp-editor-eval (te)
+(defun revl-editor-eval (te)
   "Evaluate the region (or the top-level form at point) in the REPL."
   (let* ((text (revision:te-text te))
          (sel  (revision::te-selected-string te))
          (off  (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te)))
          (form (if (not (%blankp sel)) sel
-                   (funcall (find-symbol "%TOPLEVEL-FORM-AT-OFFSET" :tvision-tvlisp) text off))))
+                   (funcall (find-symbol "%TOPLEVEL-FORM-AT-OFFSET" :revl-logic) text off))))
     (unless (%blankp form)
       (let ((repl (revision:ensure-repl)))
         (when repl
           (revision::dt-raise revision:*desktop* repl) (revision:invalidate revision:*desktop*)   ; show the result
           (revision:repl-submit-string repl (string-trim '(#\Space #\Tab #\Newline #\Return) form)))))))
 
-;;; Stage 4: editor structural ops.  Two more revision hooks reuse tvlisp's real Lisp
-;;; logic: package-aware symbol completion against the live image (tvlisp's
+;;; Stage 4: editor structural ops.  Two more revision hooks reuse revl's real Lisp
+;;; logic: package-aware symbol completion against the live image (revl's
 ;;; REPL-BACKEND-COMPLETIONS, with the buffer's IN-PACKAGE via %BUFFER-IN-PACKAGE)
 ;;; and bracket matching (%PAREN-MATCH-OFFSET, which skips strings/comments).
 
-(defun tvlisp-editor-completions (te token)
+(defun revl-editor-completions (te token)
   "Completion candidates for the prefix TOKEN at the cursor, resolved in the
 package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
   (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :tvision))
-        (buf-pkg  (find-symbol "%BUFFER-IN-PACKAGE" :tvision-tvlisp))
+        (buf-pkg  (find-symbol "%BUFFER-IN-PACKAGE" :revl-logic))
         (upto     (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te))))
     (let ((pkg (or (and buf-pkg (ignore-errors (find-package (funcall buf-pkg (revision:te-text te) upto))))
                    *package*)))
       (and complete (ignore-errors (funcall complete token pkg))))))
 
-(defun tvlisp-repl-completions (token package)
+(defun revl-repl-completions (token package)
   "REPL Tab-completion candidates for TOKEN in the listener's PACKAGE."
   (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :tvision)))
     (and complete (ignore-errors (funcall complete token (or package *package*))))))
 
-;;; Stage 5: project manager.  Two more revision hooks reuse tvlisp's real PM logic:
+;;; Stage 5: project manager.  Two more revision hooks reuse revl's real PM logic:
 ;;; git status badges (%GIT-STATUS-MAP -> relpath/:modified/:added) and
 ;;; find-in-files (%PM-GREP -> git grep / grep -rnI, returning match locations).
 
-(defun tvlisp-project-status (dir)
+(defun revl-project-status (dir)
   "Hash of relative-path -> :modified / :added for files git reports changed."
-  (let ((statusmap (find-symbol "%GIT-STATUS-MAP" :tvision-tvlisp)))
+  (let ((statusmap (find-symbol "%GIT-STATUS-MAP" :revl-logic)))
     (and statusmap (funcall statusmap dir))))
 
-(defun tvlisp-project-grep (dir query)
-  "List of (ABS-PATH LINE TEXT) matches of QUERY under DIR (capped by tvlisp)."
-  (let ((grep (find-symbol "%PM-GREP" :tvision-tvlisp)))
+(defun revl-project-grep (dir query)
+  "List of (ABS-PATH LINE TEXT) matches of QUERY under DIR (capped by revl)."
+  (let ((grep (find-symbol "%PM-GREP" :revl-logic)))
     (and grep (funcall grep dir query))))
 
 ;;; Stage 9: paredit / structural editing.  revision's editor calls *PAREDIT-FN* with
-;;; an op + the buffer text + cursor offset; we reuse tvlisp's real sexp layer
+;;; an op + the buffer text + cursor offset; we reuse revl's real sexp layer
 ;;; (%SEXP-BOUNDS / %SEXP-SPAN-AT / %SEXP-SPANS / %INNER-LIST / %PARENT-SIBLINGS)
-;;; to compute the new text + cursor, exactly as tvlisp's do-slurp/-barf/... do.
+;;; to compute the new text + cursor, exactly as revl's do-slurp/-barf/... do.
 
 (defun %ws-trim-left (s) (string-left-trim '(#\Space #\Tab #\Newline #\Return) s))
 
-(defun tvlisp-paredit (op text off)
+(defun revl-paredit (op text off)
   "Structural edit OP at OFF in TEXT -> (values NEW-TEXT NEW-OFF), or NIL."
-  (flet ((sym (n) (find-symbol n :tvision-tvlisp)))
+  (flet ((sym (n) (find-symbol n :revl-logic)))
     (let ((%bounds (sym "%SEXP-BOUNDS")) (%span (sym "%SEXP-SPAN-AT"))
           (%spans (sym "%SEXP-SPANS")) (%inner (sym "%INNER-LIST"))
           (%sibs  (sym "%PARENT-SIBLINGS")))
@@ -209,41 +209,41 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
            (multiple-value-bind (a b) (funcall %span text off)
              (when a (values (concatenate 'string (sub 0 a) (string-left-trim '(#\Space #\Tab) (sub b))) a)))))))))
 
-(defun tvlisp-reorder (name text perm r)
+(defun revl-reorder (name text perm r)
   "Reorder the first R positional args of every direct call (NAME ...) in TEXT
-per PERM, reusing tvlisp's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
-  (let ((%edits (find-symbol "%REORDER-EDITS" :tvision-tvlisp))
-        (%apply (find-symbol "%APPLY-REORDER" :tvision-tvlisp)))
+per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
+  (let ((%edits (find-symbol "%REORDER-EDITS" :revl-logic))
+        (%apply (find-symbol "%APPLY-REORDER" :revl-logic)))
     (when (and %edits %apply)
       (let ((edits (funcall %edits text name perm r)))
         (when edits (funcall %apply text edits))))))
 
-(defun install-tvlisp-logic ()
-  "Inject tvlisp's real logic into the revision toolkit (extended each migration stage)."
-  (setf revision:*lisp-indenter*         #'tvlisp-indent               ; stage 1: editor indentation
-        revision:*repl-eval-fn*          #'tvlisp-repl-eval            ; stage 2: REPL evaluator
-        revision:*editor-eval-fn*        #'tvlisp-editor-eval          ; stage 3: eval-defun / eval-region
-        revision:*editor-completions-fn* #'tvlisp-editor-completions   ; stage 4: symbol completion
-        revision:*repl-completions-fn*   #'tvlisp-repl-completions     ; REPL Tab completion
+(defun install-revl-logic ()
+  "Inject revl's real logic into the revision toolkit (extended each migration stage)."
+  (setf revision:*lisp-indenter*         #'revl-indent               ; stage 1: editor indentation
+        revision:*repl-eval-fn*          #'revl-repl-eval            ; stage 2: REPL evaluator
+        revision:*editor-eval-fn*        #'revl-editor-eval          ; stage 3: eval-defun / eval-region
+        revision:*editor-completions-fn* #'revl-editor-completions   ; stage 4: symbol completion
+        revision:*repl-completions-fn*   #'revl-repl-completions     ; REPL Tab completion
         revision:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :tvision)   ; stage 4: bracket match
-        revision:*project-status-fn*     #'tvlisp-project-status       ; stage 5: git status badges
-        revision:*project-grep-fn*       #'tvlisp-project-grep         ; stage 5: find-in-files
+        revision:*project-status-fn*     #'revl-project-status       ; stage 5: git status badges
+        revision:*project-grep-fn*       #'revl-project-grep         ; stage 5: find-in-files
         revision:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :tvision)   ; stage 7: object inspector
                                         revision:*object->outline-fn*)
-        revision:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :tvision-tvlisp)))   ; stage 8: sb-sprof profiler
+        revision:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :revl-logic)))   ; stage 8: sb-sprof profiler
                                       (and p (lambda (form package) (funcall p form package))))
-        revision:*paredit-fn*            #'tvlisp-paredit                                         ; stage 9: paredit
-        revision:*reorder-fn*            #'tvlisp-reorder                                         ; reorder args at call sites
-        revision:*url-fetch-fn*          (find-symbol "%HTTP-GET" :tvision-tvlisp)                ; stage 13: fetch (curl)
-        revision:*hyperspec-url-fn*      (find-symbol "HYPERSPEC-URL" :tvision-tvlisp)))          ; stage 13: CLHS map
+        revision:*paredit-fn*            #'revl-paredit                                         ; stage 9: paredit
+        revision:*reorder-fn*            #'revl-reorder                                         ; reorder args at call sites
+        revision:*url-fetch-fn*          (find-symbol "%HTTP-GET" :revl-logic)                ; stage 13: fetch (curl)
+        revision:*hyperspec-url-fn*      (find-symbol "HYPERSPEC-URL" :revl-logic)))          ; stage 13: CLHS map
 
 (defun main ()
-  "Run the revision-based tvlisp IDE until the user quits the launcher."
-  (install-tvlisp-logic)
+  "Run the revision-based revl IDE until the user quits the launcher."
+  (install-revl-logic)
   (revision:run-app))
 
 (defun toplevel ()
   "Dumped-executable entry point: run the IDE, report a fatal error cleanly, exit."
   (handler-case (main)
-    (error (e) (format *error-output* "~&tvlisp-tv2: fatal: ~a~%" e)))
+    (error (e) (format *error-output* "~&revl: fatal: ~a~%" e)))
   (uiop:quit 0))

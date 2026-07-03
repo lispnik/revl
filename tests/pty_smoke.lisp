@@ -1,6 +1,6 @@
-;;;; pty_smoke_tv2.lisp --- end-to-end pty smoke tests for the tvlisp binary.
+;;;; pty_smoke_tv2.lisp --- end-to-end pty smoke tests for the revl binary.
 ;;;;
-;;;; Drives the *built* ./tvlisp through a pseudo-terminal (via the
+;;;; Drives the *built* ./revl through a pseudo-terminal (via the
 ;;;; tvision-pty-driver sibling project) and asserts on the reconstructed screen,
 ;;;; so the integrated IDE flows -- the consolidated framed menu, the SLIME-style
 ;;;; REPL with clickable presentations + completion, the editor's frame indicator,
@@ -16,12 +16,12 @@
   (asdf:load-asd asd))
 (handler-bind ((warning #'muffle-warning)) (asdf:load-system :tvision-pty-driver))
 
-(defpackage #:tvlisp-tv2-smoke (:use #:common-lisp #:tvision-pty-driver))
-(in-package #:tvlisp-tv2-smoke)
+(defpackage #:revl-smoke (:use #:common-lisp #:tvision-pty-driver))
+(in-package #:revl-smoke)
 
 (defun binary ()
-  (or (sb-ext:posix-getenv "TVLISP_TV2_BIN")
-      (namestring (truename (format nil "~a../tvlisp" (directory-namestring *load-pathname*))))))
+  (or (sb-ext:posix-getenv "REVL_BIN")
+      (namestring (truename (format nil "~a../revl" (directory-namestring *load-pathname*))))))
 
 (let ((d (launch (binary) :cols 130 :rows 30)))
   (unwind-protect
@@ -189,4 +189,4 @@
          (check d "Window > Close all removes every window"
                 (and (wait-gone d "Emoji palette" :timeout 3) (not (found? d "Lisp REPL")))))
     (quit-driver d))
-  (sb-ext:exit :code (report d :title "tvlisp pty smoke")))
+  (sb-ext:exit :code (report d :title "revl pty smoke")))
