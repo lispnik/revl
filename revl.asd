@@ -17,5 +17,22 @@
   :build-operation "program-op"
   :build-pathname "revl"
   :entry-point "revl:toplevel"   ; REVL is the entry package (see src/main.lisp)
-  :components ((:module "src"
+  :components ((:module "ide"                ; the Lisp-IDE windows (on revision's toolkit)
+                :serial t
+                :components ((:file "threadmon")
+                             (:file "browser")
+                             (:file "project")
+                             (:file "debugger")
+                             (:file "repl")
+                             (:file "inspect")
+                             (:file "tools")
+                             (:file "paredit")
+                             (:file "nav")
+                             (:file "compile")
+                             (:file "editing")
+                             (:file "sbcl")
+                             (:file "docs")
+                             (:file "desktop-ide")   ; REPL/table glue pulled out of the toolkit desktop
+                             (:file "app")))
+               (:module "src"
                 :components ((:file "main")))))
