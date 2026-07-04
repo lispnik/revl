@@ -4,10 +4,7 @@
 ;;;; operation set Lem gets from micros/swank, but called directly since the TUI
 ;;;; *is* the Lisp image).  Pure read/eval/print + symbol completion + the CL
 ;;;; history-variable machinery -- NO view dependency, so the revision REPL reuses it
-;;;; through hooks (*REPL-EVAL-FN* / *REPL-COMPLETIONS-FN*).  The classic TReplView
-;;;; that wraps it lives in src/repl.lisp.
-;;;;
-;;;; Extends the REVISION package (the package belongs to the revision base).
+;;;; through hooks (*REPL-EVAL-FN* / *REPL-COMPLETIONS-FN*).
 
 (in-package #:revl-logic)
 

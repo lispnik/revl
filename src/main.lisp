@@ -1,23 +1,21 @@
-;;;; revision-main.lisp --- revl running on the experimental revision CLOS kernel.
+;;;; main.lisp --- revl: the entry point, and the wiring of revl-logic into revision.
 ;;;;
-;;;; The classic revl IDE is built on the original `revision' framework.  Every
-;;;; revl window has also been rebuilt on `revision', the CLOS-native re-architecture
-;;;; of the framework (see ../revision/revision/README.md).  This is the entry point
-;;;; for that build: it launches the revision IDE shell (a menu of the ported
-;;;; windows).  It lives in its own system (`revl/revision') so the classic build
-;;;; and binary are untouched.
+;;;; revl is a SLIME-class Lisp IDE on the `revision' CLOS-native framework: the
+;;;; windows (REPL, editor, debugger, inspector, project tree, browsers) live in
+;;;; revision, and the framework-agnostic Lisp logic (indent, sexp, the REPL backend,
+;;;; git/grep, profiling, CLHS) lives in `revl-logic'.  This file installs that logic
+;;;; into revision's extension hooks (INSTALL-REVL-LOGIC) and launches the IDE.
 
 (defpackage #:revl
   (:use #:cl)
-  (:documentation "revl on the revision kernel.")
+  (:documentation "revl: a SLIME-class Lisp IDE on the revision framework.")
   (:export #:main #:toplevel))
 
 (in-package #:revl)
 
-;;; --- migration: reuse the classic revl app's real logic on revision windows ----
-;;; Stage 1: the editor's Lisp indentation.  revision's editor calls *LISP-INDENTER*
-;;; for a fresh line; we point it at revl's actual indent engine
-;;; (REVISION::%LISP-INDENT-AT), so the revision editor indents exactly like revl.
+;;; --- wiring: install revl-logic into revision's extension hooks ----------------
+;;; Editor indentation: revision's editor calls *LISP-INDENTER* for a fresh line;
+;;; point it at revl-logic's indent engine so the editor indents Lisp correctly.
 
 (defun %line-offset (te line)
   "Char offset where LINE begins in TE's buffer."
@@ -29,10 +27,10 @@
        (revl-logic::%lisp-indent-at (revision:te-text te) (%line-offset te (revision::te-cy te))))
       0))
 
-;;; Stage 2: the REPL evaluator.  Replace revision's hand-rolled eval loop with
-;;; revl's actual REVISION:REPL-BACKEND-EVAL — its read/eval/print, the per-
-;;; listener CL history vars (-, +/++/+++, */**/***, ///), and sticky IN-PACKAGE
-;;; — while keeping revision's SLDB debugger as the error handler.
+;;; REPL evaluator: drive revision's REPL window with revl-logic's REPL-BACKEND-EVAL
+;;; — its read/eval/print, the per-listener CL history vars (-, +/++/+++, */**/***,
+;;; ///), and sticky IN-PACKAGE — while keeping revision's SLDB debugger as the error
+;;; handler.
 
 (defun revl-repl-eval (win input)
   "Worker thread: evaluate INPUT for the revision REPL window WIN using revl's
@@ -75,9 +73,9 @@ backend, then post output + results + new package back through revision's UI bri
            (setf (revision:repl-package win) new-pkg (revision:repl-busy win) nil)
            (revision::%repl-update-prompt win)))))))
 
-;;; Stage 3: eval-defun / eval-region.  The editor's Eval chip evaluates the
-;;; selection (region) or, if none, the top-level form at the cursor — extracted
-;;; with revl's real %TOPLEVEL-FORM-AT-OFFSET — in the desktop's REPL.
+;;; eval-defun / eval-region: the editor's Eval chip evaluates the selection, or (if
+;;; none) the top-level form at the cursor (via revl-logic's %TOPLEVEL-FORM-AT-OFFSET),
+;;; in the desktop's REPL.
 
 (defun %blankp (s) (zerop (length (string-trim '(#\Space #\Tab #\Newline #\Return) (or s "")))))
 
@@ -94,10 +92,10 @@ backend, then post output + results + new package back through revision's UI bri
           (revision::dt-raise revision:*desktop* repl) (revision:invalidate revision:*desktop*)   ; show the result
           (revision:repl-submit-string repl (string-trim '(#\Space #\Tab #\Newline #\Return) form)))))))
 
-;;; Stage 4: editor structural ops.  Two more revision hooks reuse revl's real Lisp
-;;; logic: package-aware symbol completion against the live image (revl's
-;;; REPL-BACKEND-COMPLETIONS, with the buffer's IN-PACKAGE via %BUFFER-IN-PACKAGE)
-;;; and bracket matching (%PAREN-MATCH-OFFSET, which skips strings/comments).
+;;; Editor completion + bracket matching: package-aware symbol completion against the
+;;; live image (REPL-BACKEND-COMPLETIONS, resolving the buffer's IN-PACKAGE via
+;;; %BUFFER-IN-PACKAGE) and paren matching (%PAREN-MATCH-OFFSET, which skips
+;;; strings/comments).
 
 (defun revl-editor-completions (te token)
   "Completion candidates for the prefix TOKEN at the cursor, resolved in the
@@ -111,9 +109,8 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
   "REPL Tab-completion candidates for TOKEN in the listener's PACKAGE."
   (ignore-errors (revl-logic::repl-backend-completions token (or package *package*))))
 
-;;; Stage 5: project manager.  Two more revision hooks reuse revl's real PM logic:
-;;; git status badges (%GIT-STATUS-MAP -> relpath/:modified/:added) and
-;;; find-in-files (%PM-GREP -> git grep / grep -rnI, returning match locations).
+;;; Project manager: git status badges (%GIT-STATUS-MAP -> relpath/:modified/:added)
+;;; and find-in-files (%PM-GREP -> git grep / grep -rnI, returning match locations).
 
 (defun revl-project-status (dir)
   "Hash of relative-path -> :modified / :added for files git reports changed."
@@ -123,10 +120,9 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
   "List of (ABS-PATH LINE TEXT) matches of QUERY under DIR (capped by revl)."
   (revl-logic::%pm-grep dir query))
 
-;;; Stage 9: paredit / structural editing.  revision's editor calls *PAREDIT-FN* with
-;;; an op + the buffer text + cursor offset; we reuse revl's real sexp layer
-;;; (%SEXP-BOUNDS / %SEXP-SPAN-AT / %SEXP-SPANS / %INNER-LIST / %PARENT-SIBLINGS)
-;;; to compute the new text + cursor, exactly as revl's do-slurp/-barf/... do.
+;;; Paredit / structural editing: revision's editor calls *PAREDIT-FN* with an op + the
+;;; buffer text + cursor offset; compute the new text + cursor from revl-logic's sexp
+;;; layer (%SEXP-BOUNDS / %SEXP-SPAN-AT / %SEXP-SPANS / %INNER-LIST / %PARENT-SIBLINGS).
 
 (defun %ws-trim-left (s) (string-left-trim '(#\Space #\Tab #\Newline #\Return) s))
 
@@ -208,11 +204,11 @@ per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
     (when edits (revl-logic::%apply-reorder text edits))))
 
 (defun install-revl-logic ()
-  "Inject revl's real logic into the revision toolkit (extended each migration stage)."
-  (setf revision:*lisp-indenter*         #'revl-indent               ; stage 1: editor indentation
-        revision:*repl-eval-fn*          #'revl-repl-eval            ; stage 2: REPL evaluator
-        revision:*editor-eval-fn*        #'revl-editor-eval          ; stage 3: eval-defun / eval-region
-        revision:*editor-completions-fn* #'revl-editor-completions   ; stage 4: symbol completion
+  "Install revl-logic's functions into revision's extension hooks (see each *…-fn*)."
+  (setf revision:*lisp-indenter*         #'revl-indent               ; editor indentation
+        revision:*repl-eval-fn*          #'revl-repl-eval            ; REPL evaluator
+        revision:*editor-eval-fn*        #'revl-editor-eval          ; eval-defun / eval-region
+        revision:*editor-completions-fn* #'revl-editor-completions   ; symbol completion
         revision:*repl-completions-fn*   #'revl-repl-completions     ; REPL Tab completion
         revision:*paren-matcher*         #'revl-logic::%paren-match-offset   ; bracket match
         revision:*project-status-fn*     #'revl-project-status             ; git status badges

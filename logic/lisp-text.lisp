@@ -4,12 +4,7 @@
 ;;;; take a STRING (+ char offset) and return a result, with NO dependency on any
 ;;;; view.  This is what the revision editor reuses through hooks (*LISP-INDENTER* ->
 ;;;; %LISP-INDENT-AT, *PAREN-MATCHER* -> %PAREN-MATCH-OFFSET), so it lives in the
-;;;; shared `revl-logic' system rather than the classic UI.  The classic,
-;;;; view-coupled services (colouriser install, indent-line/-region/-sexp on a
-;;;; live TTEXT-VIEW, match-paren-jump) live in src/lisp-text-view.lisp.
-;;;;
-;;;; It extends the REVISION package (the package now belongs to the revision base), so
-;;;; the revision hooks can FIND-SYMBOL these by name in :REVISION.
+;;;; shared `revl-logic' system.
 
 (in-package #:revl-logic)
 

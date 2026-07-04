@@ -3,9 +3,8 @@
 ;;;; The pure, view-free helpers the revision IDE reuses through hooks: sexp analysis
 ;;;; (paredit/reorder), git status + grep for the project manager, the sb-sprof
 ;;;; profiler, HTTP fetch (curl), the HyperSpec URL map, buffer package/form
-;;;; extraction.  Extracted from src/revl.lisp (the classic app UI) so the revision
-;;;; build need not load the classic view hierarchy.  Builds on revision + earlier
-;;;; revl-logic files alone.
+;;;; extraction.  No view dependency -- it builds on the revision foundation and the
+;;;; earlier revl-logic files alone.
 
 (in-package #:revl-logic)
 
