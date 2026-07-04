@@ -70,7 +70,9 @@ At a glance — the tools it ships (each detailed below):
   documentation / disassemble, a **call tree** (watch functions; live
   args/results as a navigable tree), statistical + deterministic **profilers**,
   a **thread monitor**, and HyperSpec lookup/browsing plus the SBCL, ECL, and
-  CCL manuals.
+  CCL manuals.  Any object list or table — the package / class / ASDF-system
+  browsers, the package table, the thread monitor — opens its focused row's object
+  in the inspector with **Alt-I**.
 - **Edit** — Lisp syntax highlighting + `cl-indent` auto-indent, **eval** and
   **compile** the defun/region (compile with **navigable compiler notes**),
   in-buffer **symbol completion**, **comment region**, **paredit** structural
