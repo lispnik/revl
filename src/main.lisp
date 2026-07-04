@@ -24,10 +24,9 @@
   (loop for i below line sum (1+ (length (revision::te-line te i)))))
 
 (defun revl-indent (te)
-  "Indent a fresh line using the classic revl Lisp indenter."
+  "Indent a fresh line using revl's Lisp indenter."
   (or (ignore-errors
-       (funcall (find-symbol "%LISP-INDENT-AT" :revision)
-                (revision:te-text te) (%line-offset te (revision::te-cy te))))
+       (revision::%lisp-indent-at (revision:te-text te) (%line-offset te (revision::te-cy te))))
       0))
 
 ;;; Stage 2: the REPL evaluator.  Replace revision's hand-rolled eval loop with
@@ -38,8 +37,7 @@
 (defun revl-repl-eval (win input)
   "Worker thread: evaluate INPUT for the revision REPL window WIN using revl's
 backend, then post output + results + new package back through revision's UI bridge."
-  (let* ((backend (find-symbol "REPL-BACKEND-EVAL" :revision))
-         (hist (revision:repl-hist-vars win)))
+  (let* ((hist (revision:repl-hist-vars win)))
     (multiple-value-bind (output results new-pkg errored new-hist)
         (restart-case
             ;; route break (invoke-debugger) and single-step (step-condition --
@@ -47,7 +45,7 @@ backend, then post output + results + new package back through revision's UI bri
             ;; debugger too, so TRACE :break and (step ...) work in-UI
             (let ((*debugger-hook* (lambda (c hook) (declare (ignore hook)) (revision::%repl-debug win c))))
               (handler-bind ((sb-ext:step-condition (lambda (c) (revision::%repl-debug win c))))
-                (funcall backend input (revision:repl-package win)
+                (revision::repl-backend-eval input (revision:repl-package win)
                          (lambda (e) (revision::%repl-debug win e))    ; reuse revision's cross-thread SLDB debugger
                          hist)))
           (revision::repl-abort () (values "" nil (revision:repl-package win) t hist)))   ; debugger's abort lands here
@@ -89,7 +87,7 @@ backend, then post output + results + new package back through revision's UI bri
          (sel  (revision::te-selected-string te))
          (off  (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te)))
          (form (if (not (%blankp sel)) sel
-                   (funcall (find-symbol "%TOPLEVEL-FORM-AT-OFFSET" :revl-logic) text off))))
+                   (revl-logic::%toplevel-form-at-offset text off))))
     (unless (%blankp form)
       (let ((repl (revision:ensure-repl)))
         (when repl
@@ -104,17 +102,14 @@ backend, then post output + results + new package back through revision's UI bri
 (defun revl-editor-completions (te token)
   "Completion candidates for the prefix TOKEN at the cursor, resolved in the
 package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
-  (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :revision))
-        (buf-pkg  (find-symbol "%BUFFER-IN-PACKAGE" :revl-logic))
-        (upto     (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te))))
-    (let ((pkg (or (and buf-pkg (ignore-errors (find-package (funcall buf-pkg (revision:te-text te) upto))))
+  (let ((upto (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te))))
+    (let ((pkg (or (ignore-errors (find-package (revl-logic::%buffer-in-package (revision:te-text te) upto)))
                    *package*)))
-      (and complete (ignore-errors (funcall complete token pkg))))))
+      (ignore-errors (revision::repl-backend-completions token pkg)))))
 
 (defun revl-repl-completions (token package)
   "REPL Tab-completion candidates for TOKEN in the listener's PACKAGE."
-  (let ((complete (find-symbol "REPL-BACKEND-COMPLETIONS" :revision)))
-    (and complete (ignore-errors (funcall complete token (or package *package*))))))
+  (ignore-errors (revision::repl-backend-completions token (or package *package*))))
 
 ;;; Stage 5: project manager.  Two more revision hooks reuse revl's real PM logic:
 ;;; git status badges (%GIT-STATUS-MAP -> relpath/:modified/:added) and
@@ -122,13 +117,11 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
 
 (defun revl-project-status (dir)
   "Hash of relative-path -> :modified / :added for files git reports changed."
-  (let ((statusmap (find-symbol "%GIT-STATUS-MAP" :revl-logic)))
-    (and statusmap (funcall statusmap dir))))
+  (revl-logic::%git-status-map dir))
 
 (defun revl-project-grep (dir query)
   "List of (ABS-PATH LINE TEXT) matches of QUERY under DIR (capped by revl)."
-  (let ((grep (find-symbol "%PM-GREP" :revl-logic)))
-    (and grep (funcall grep dir query))))
+  (revl-logic::%pm-grep dir query))
 
 ;;; Stage 9: paredit / structural editing.  revision's editor calls *PAREDIT-FN* with
 ;;; an op + the buffer text + cursor offset; we reuse revl's real sexp layer
@@ -139,10 +132,9 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
 
 (defun revl-paredit (op text off)
   "Structural edit OP at OFF in TEXT -> (values NEW-TEXT NEW-OFF), or NIL."
-  (flet ((sym (n) (find-symbol n :revl-logic)))
-    (let ((%bounds (sym "%SEXP-BOUNDS")) (%span (sym "%SEXP-SPAN-AT"))
-          (%spans (sym "%SEXP-SPANS")) (%inner (sym "%INNER-LIST"))
-          (%sibs  (sym "%PARENT-SIBLINGS")))
+  (let ((%bounds #'revl-logic::%sexp-bounds) (%span #'revl-logic::%sexp-span-at)
+        (%spans #'revl-logic::%sexp-spans) (%inner #'revl-logic::%inner-list)
+        (%sibs  #'revl-logic::%parent-siblings))
       (macrolet ((sub (&rest a) `(subseq text ,@a)))
         (ecase op
           (:wrap
@@ -207,16 +199,13 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
                              (+ (car a) (- (cdr b) (car b)) (length gap)))))))))
           (:kill
            (multiple-value-bind (a b) (funcall %span text off)
-             (when a (values (concatenate 'string (sub 0 a) (string-left-trim '(#\Space #\Tab) (sub b))) a)))))))))
+             (when a (values (concatenate 'string (sub 0 a) (string-left-trim '(#\Space #\Tab) (sub b))) a))))))))
 
 (defun revl-reorder (name text perm r)
   "Reorder the first R positional args of every direct call (NAME ...) in TEXT
 per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
-  (let ((%edits (find-symbol "%REORDER-EDITS" :revl-logic))
-        (%apply (find-symbol "%APPLY-REORDER" :revl-logic)))
-    (when (and %edits %apply)
-      (let ((edits (funcall %edits text name perm r)))
-        (when edits (funcall %apply text edits))))))
+  (let ((edits (revl-logic::%reorder-edits text name perm r)))
+    (when edits (revl-logic::%apply-reorder text edits))))
 
 (defun install-revl-logic ()
   "Inject revl's real logic into the revision toolkit (extended each migration stage)."
@@ -225,17 +214,15 @@ per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
         revision:*editor-eval-fn*        #'revl-editor-eval          ; stage 3: eval-defun / eval-region
         revision:*editor-completions-fn* #'revl-editor-completions   ; stage 4: symbol completion
         revision:*repl-completions-fn*   #'revl-repl-completions     ; REPL Tab completion
-        revision:*paren-matcher*         (find-symbol "%PAREN-MATCH-OFFSET" :revision)   ; stage 4: bracket match
-        revision:*project-status-fn*     #'revl-project-status       ; stage 5: git status badges
-        revision:*project-grep-fn*       #'revl-project-grep         ; stage 5: find-in-files
-        revision:*object->outline-fn*    (or (find-symbol "OBJECT->OUTLINE" :revision)   ; stage 7: object inspector
-                                        revision:*object->outline-fn*)
-        revision:*profile-fn*            (let ((p (find-symbol "RUN-PROFILE" :revl-logic)))   ; stage 8: sb-sprof profiler
-                                      (and p (lambda (form package) (funcall p form package))))
-        revision:*paredit-fn*            #'revl-paredit                                         ; stage 9: paredit
-        revision:*reorder-fn*            #'revl-reorder                                         ; reorder args at call sites
-        revision:*url-fetch-fn*          (find-symbol "%HTTP-GET" :revl-logic)                ; stage 13: fetch (curl)
-        revision:*hyperspec-url-fn*      (find-symbol "HYPERSPEC-URL" :revl-logic)))          ; stage 13: CLHS map
+        revision:*paren-matcher*         #'revision::%paren-match-offset   ; bracket match
+        revision:*project-status-fn*     #'revl-project-status             ; git status badges
+        revision:*project-grep-fn*       #'revl-project-grep               ; find-in-files
+        revision:*object->outline-fn*    #'revision::object->outline       ; object inspector
+        revision:*profile-fn*            #'revl-logic::run-profile         ; sb-sprof profiler
+        revision:*paredit-fn*            #'revl-paredit                    ; paredit
+        revision:*reorder-fn*            #'revl-reorder                    ; reorder args at call sites
+        revision:*url-fetch-fn*          #'revl-logic::%http-get           ; fetch (curl)
+        revision:*hyperspec-url-fn*      #'revl-logic::hyperspec-url))     ; CLHS map
 
 (defun main ()
   "Run the revision-based revl IDE until the user quits the launcher."
