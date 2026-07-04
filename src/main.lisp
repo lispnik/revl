@@ -203,19 +203,19 @@ per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
 (defun install-revl-logic ()
   "Install revl-logic's functions into revision's extension hooks (see each *…-fn*)."
   (setf revision:*lisp-indenter*         #'revl-indent               ; editor indentation
-        revision:*repl-eval-fn*          #'revl-repl-eval            ; REPL evaluator
+        *repl-eval-fn*          #'revl-repl-eval            ; REPL evaluator
         revision:*editor-eval-fn*        #'revl-editor-eval          ; eval-defun / eval-region
         revision:*editor-completions-fn* #'revl-editor-completions   ; symbol completion
-        revision:*repl-completions-fn*   #'revl-repl-completions     ; REPL Tab completion
+        *repl-completions-fn*   #'revl-repl-completions     ; REPL Tab completion
         revision:*paren-matcher*         #'revl-logic::%paren-match-offset   ; bracket match
-        revision:*project-status-fn*     #'revl-project-status             ; git status badges
-        revision:*project-grep-fn*       #'revl-project-grep               ; find-in-files
-        revision:*object->outline-fn*    #'revl-logic::object->outline       ; object inspector
-        revision:*profile-fn*            #'revl-logic::run-profile         ; sb-sprof profiler
-        revision:*paredit-fn*            #'revl-paredit                    ; paredit
-        revision:*reorder-fn*            #'revl-reorder                    ; reorder args at call sites
+        *project-status-fn*     #'revl-project-status             ; git status badges
+        *project-grep-fn*       #'revl-project-grep               ; find-in-files
+        *object->outline-fn*    #'revl-logic::object->outline       ; object inspector
+        *profile-fn*            #'revl-logic::run-profile         ; sb-sprof profiler
+        *paredit-fn*            #'revl-paredit                    ; paredit
+        *reorder-fn*            #'revl-reorder                    ; reorder args at call sites
         revision:*url-fetch-fn*          #'revl-logic::%http-get           ; fetch (curl)
-        revision:*hyperspec-url-fn*      #'revl-logic::hyperspec-url))     ; CLHS map
+        *hyperspec-url-fn*      #'revl-logic::hyperspec-url))     ; CLHS map
 
 (defun main ()
   "Run the revision-based revl IDE until the user quits the launcher."
