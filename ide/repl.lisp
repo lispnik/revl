@@ -13,7 +13,7 @@
 ;;;; worker and posted back through RUN-ON-UI.  The SLDB-style restart dialog is
 ;;;; the one piece deferred -- errors print and abort.
 
-(in-package #:revision)
+(in-package #:revl)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :sb-concurrency))
@@ -281,7 +281,7 @@ recalls the chosen line into the input."
 (defun %repl-token-before (sb)
   "Return (values TOKEN START) for the Lisp symbol prefix ending at the caret."
   (let* ((in (sb-input sb)) (c (min (sb-icaret sb) (length in))) (start c))
-    (loop while (and (plusp start) (%lisp-token-char-p (char in (1- start)))) do (decf start))
+    (loop while (and (plusp start) (revision::%lisp-token-char-p (char in (1- start)))) do (decf start))
     (values (subseq in start c) start)))
 
 (defun %repl-complete (sb)

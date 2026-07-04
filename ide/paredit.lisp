@@ -6,7 +6,7 @@
 ;;;; layer (%SEXP-BOUNDS / %SEXP-SPAN-AT / %SEXP-SPANS / %INNER-LIST).  Exposed
 ;;;; here as a "Lisp" menu that operates on the focused editor.
 
-(in-package #:revision)
+(in-package #:revl)
 
 ;;; (funcall fn OP TEXT OFFSET) -> (values NEW-TEXT NEW-OFFSET), or NIL to no-op.
 ;;; OP is one of :slurp :barf :slurp-back :barf-back :splice :wrap :raise

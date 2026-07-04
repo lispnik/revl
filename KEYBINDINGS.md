@@ -56,20 +56,6 @@ _Generated from the keymaps by `revision:keybinding-markdown`. Do not edit by ha
 | `Down` | `Move the selection down.` |
 | `Up` | `Move the selection up.` |
 
-## Inspector
-
-| Key | Command |
-|-----|---------|
-| `Bksp` | `Go back to the previously inspected value.` |
-| `Enter` | `Re-root the inspector on the focused node's value (remembering the current
-view for Back).` |
-
-## Project tree
-
-| Key | Command |
-|-----|---------|
-| `Enter` | `Expand/collapse a directory, or open a file leaf in the editor.` |
-
 ## Editor
 
 | Key | Command |
@@ -84,6 +70,27 @@ view for Back).` |
 | `Ctrl+W` | `Toggle soft word-wrap.` |
 | `Ctrl+Z` | `Undo the last edit.` |
 
+## Dialogs
+
+| Key | Command |
+|-----|---------|
+| `Enter` | `Accept the dialog: validate the fields and return its value.` |
+| `Esc` | `Cancel the dialog.` |
+
+## Inspector
+
+| Key | Command |
+|-----|---------|
+| `Bksp` | `Go back to the previously inspected value.` |
+| `Enter` | `Re-root the inspector on the focused node's value (remembering the current
+view for Back).` |
+
+## Project tree
+
+| Key | Command |
+|-----|---------|
+| `Enter` | `Expand/collapse a directory, or open a file leaf in the editor.` |
+
 ## REPL input
 
 | Key | Command |
@@ -91,13 +98,6 @@ view for Back).` |
 | `Down` | `Recall the next input from history.` |
 | `Up` | `Recall the previous input from history.` |
 | `Ctrl+R` | `Reverse-i-search the input history.` |
-
-## Dialogs
-
-| Key | Command |
-|-----|---------|
-| `Enter` | `Accept the dialog: validate the fields and return its value.` |
-| `Esc` | `Cancel the dialog.` |
 
 ## Call-tree
 

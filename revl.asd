@@ -19,7 +19,8 @@
   :entry-point "revl:toplevel"   ; REVL is the entry package (see src/main.lisp)
   :components ((:module "ide"                ; the Lisp-IDE windows (on revision's toolkit)
                 :serial t
-                :components ((:file "threadmon")
+                :components ((:file "package")
+                             (:file "threadmon")
                              (:file "browser")
                              (:file "project")
                              (:file "debugger")

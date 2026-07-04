@@ -1,9 +1,9 @@
 ;;;; editing.lisp --- extra editor commands: comment region, snippets,
 ;;;; pretty-print, and the auto-close toggle.  All operate on the focused editor.
 
-(in-package #:revision)
+(in-package #:revl)
 
-;;; %comment-region / %uncomment-line moved to the editor widget (revision's
+;;; revision::%comment-region / revision::%uncomment-line moved to the editor widget (revision's
 ;;; editor.lisp); the Edit-menu "Comment region" command below just calls it.
 
 ;;; --- snippets ---------------------------------------------------------------
@@ -177,14 +177,14 @@ count.  Undoable; keeps the cursor near its original offset."
   "Rename the symbol at point throughout the focused buffer (textual, whole-token)."
   (let ((te (%focused-editor)))
     (if (null te)
-        (%tool-note "no editor focused")
+        (revision::%tool-note "no editor focused")
         (let ((old (%symbol-at-point te)))
           (if (null old)
-              (%tool-note "place the cursor on a symbol to rename")
+              (revision::%tool-note "place the cursor on a symbol to rename")
               (let ((new (prompt-string " Rename symbol " (format nil "Rename ~a to:" old))))
                 (when (and new (plusp (length (setf new (string-trim " " new)))) (string/= new old))
                   (let ((count (%rename-token te old new)))
-                    (%tool-note (format nil "renamed ~d occurrence~:p of ~a → ~a" count old new))))))))))
+                    (revision::%tool-note (format nil "renamed ~d occurrence~:p of ~a → ~a" count old new))))))))))
 
 ;;; --- an Edit menu -----------------------------------------------------------
 
@@ -200,12 +200,12 @@ count.  Undoable; keeps the cursor near its original offset."
                 (list "Paste"               (lambda () (let ((te (cur))) (when te (te-paste te) (te-ensure-visible te) (invalidate te)))) (cons :ins revision::+md-shift+))   ; Shift+Ins (CUA)
                 (list "Select all"          (lambda () (let ((te (cur))) (when te (te-select-all te) (te-ensure-visible te) (invalidate te)))))
                 :--
-                (list "Comment region"      (lambda () (%comment-region (cur))))
+                (list "Comment region"      (lambda () (revision::%comment-region (cur))))
                 (list "Pretty-print region" (lambda () (%pretty-print-selection (cur))))
                 (list "Insert snippet…"     (lambda () (%insert-snippet (cur))))
                 :--
                 (list "Incremental search"  (lambda () (let ((te (cur))) (when te (te-isearch-start te)))))
-                (list "History search"      (lambda () (let ((r (and dt (%dt-repl dt))))   ; REPL input history (Ctrl-R)
+                (list "History search"      (lambda () (let ((r (and dt (revision::%dt-repl dt))))   ; REPL input history (Ctrl-R)
                                                          (when r (%repl-history-search (find-view r 'transcript))))))
                 (list "Go to line…"         (lambda () (%editor-goto-line (cur))))
                 (list "Reorder args…"       (lambda () (do-reorder-args)))

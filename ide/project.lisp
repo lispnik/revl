@@ -6,7 +6,7 @@
 ;;;; files.  (The shipped PM's git badges / file-ops / find-in-files are extra
 ;;;; layers on the same shape.)
 
-(in-package #:revision)
+(in-package #:revl)
 
 (defun %git-files (dir)
   "Sorted relative paths git tracks under DIR, or NIL when DIR is not a git repo."
@@ -165,7 +165,7 @@ manager and source navigation so they never spawn a divergent second buffer."
 
 ;;; --- find-in-files ----------------------------------------------------------
 
-;;; prompt-string and %confirm are toolkit dialogs now (revision's dialogs.lisp).
+;;; prompt-string and revision::%confirm are toolkit dialogs now (revision's dialogs.lisp).
 
 (defun %pm-find-in-files (win)
   "Prompt for a string, grep the project (via *PROJECT-GREP-FN*), and open the
@@ -253,7 +253,7 @@ so MAKE-PATHNAME won't inherit a type from anything it is merged against."
   (let ((path (%pm-selected-file win)))
     (if (null path)
         (%pm-echo win " select a file to delete ")
-        (when (%confirm (format nil " Delete ~a? " (file-namestring path)))
+        (when (revision::%confirm (format nil " Delete ~a? " (file-namestring path)))
           (handler-case (progn (delete-file path) (%pm-rebuild win) (%pm-echo win " deleted "))
             (error (e) (%pm-echo win (format nil " ~a " e))))))))
 

@@ -7,7 +7,7 @@
 ;;;; revision's cross-thread debugger (the REPL worker binds *DEBUGGER-HOOK* so a
 ;;;; step/break surfaces in the same restart picker as an error).
 
-(in-package #:revision)
+(in-package #:revl)
 
 ;;; --- a table-view window (reused by the profiler) ---------------------------
 
@@ -36,7 +36,7 @@ WINDOW FOCUS)."
     (setf (container-focus r) (or (find-view r 'transcript) (container-focus r)))
     (dt-refocus *desktop*) (invalidate *desktop*)))
 
-;;; %tool-note (the transient status-bar note) is a toolkit helper now — it lives in
+;;; revision::%tool-note (the transient status-bar note) is a toolkit helper now — it lives in
 ;;; revision's desktop.lisp; this file just uses it.
 
 (defun do-trace ()
@@ -45,11 +45,11 @@ WINDOW FOCUS)."
     (when (and s (plusp (length (string-trim " " s))))
       (let ((sym (%read-in-active s)))
         (cond
-          ((not (and sym (symbolp sym))) (%tool-note (format nil "~a is not a function name." s)))
+          ((not (and sym (symbolp sym))) (revision::%tool-note (format nil "~a is not a function name." s)))
           ((member sym (%traced-symbols))
-           (ignore-errors (eval (list 'untrace sym))) (%tool-note (format nil "untraced ~s" sym)))
+           (ignore-errors (eval (list 'untrace sym))) (revision::%tool-note (format nil "untraced ~s" sym)))
           (t (ignore-errors (eval (list 'trace sym)))
-             (%tool-note (format nil "tracing ~s — call it; trace output appears here" sym))))))))
+             (revision::%tool-note (format nil "tracing ~s — call it; trace output appears here" sym))))))))
 
 (defun do-break-on-entry ()
   "TRACE a function with :break, so its next call stops in revision's debugger."
@@ -58,8 +58,8 @@ WINDOW FOCUS)."
       (let ((sym (%read-in-active s)))
         (if (and sym (symbolp sym))
             (progn (ignore-errors (eval (list 'trace sym :break t)))
-                   (%tool-note (format nil "break-on-entry armed on ~s (untrace to clear)" sym)))
-            (%tool-note (format nil "~a is not a function name." s)))))))
+                   (revision::%tool-note (format nil "break-on-entry armed on ~s (untrace to clear)" sym)))
+            (revision::%tool-note (format nil "~a is not a function name." s)))))))
 
 (defun do-conditional-break ()
   "TRACE a function with :break gated by a predicate FORM (SBCL binds the args as
@@ -74,9 +74,9 @@ stops in revision's debugger."
               (when (and c (plusp (length (string-trim " " c))))
                 (let ((form (%read-in-active c)))
                   (ignore-errors (eval (list 'trace sym :break form)))
-                  (%tool-note (format nil "conditional break armed on ~s when ~a (untrace to clear)"
+                  (revision::%tool-note (format nil "conditional break armed on ~s when ~a (untrace to clear)"
                                       sym (string-trim " " c))))))
-            (%tool-note (format nil "~a is not a function name." s)))))))
+            (revision::%tool-note (format nil "~a is not a function name." s)))))))
 
 (defun do-trace-package ()
   "TRACE every external function of a package (macros / special operators skipped)."
@@ -85,17 +85,17 @@ stops in revision's debugger."
       (let* ((pkg (find-package (string-upcase (string-trim " " p))))
              (pn  (and pkg (package-name pkg))))
         (cond
-          ((null pkg) (%tool-note (format nil "no such package: ~a" p)))
+          ((null pkg) (revision::%tool-note (format nil "no such package: ~a" p)))
           ((and pn (or (string= pn "COMMON-LISP") (string= pn "KEYWORD")
                        (and (>= (length pn) 3) (string= (subseq pn 0 3) "SB-"))))
-           (%tool-note (format nil "refusing to trace all of ~a — tracing CL/SBCL internals wholesale (format, length…) recurses through the trace output and hangs the IDE.  Trace individual functions instead." pn)))
+           (revision::%tool-note (format nil "refusing to trace all of ~a — tracing CL/SBCL internals wholesale (format, length…) recurses through the trace output and hangs the IDE.  Trace individual functions instead." pn)))
           (t
             (let ((syms '()))
               (do-external-symbols (s pkg)
                 (when (and (fboundp s) (not (macro-function s)) (not (special-operator-p s)))
                   (push s syms)))
               (dolist (s syms) (ignore-errors (eval (list 'trace s))))
-              (%tool-note (format nil "tracing ~d function~:p in ~a — call them; output appears here"
+              (revision::%tool-note (format nil "tracing ~d function~:p in ~a — call them; output appears here"
                                   (length syms) (package-name pkg))))))))))
 
 ;;; --- trace snapshots (named saved sets of traced functions) -----------------
@@ -118,19 +118,19 @@ stops in revision's debugger."
              (setf *trace-snapshots*
                    (cons (cons name (%traced-symbols))
                          (remove name *trace-snapshots* :key #'car :test #'string=)))
-             (%tool-note (format nil "saved trace snapshot ~a (~d function~:p)" name (length (%traced-symbols)))))))
+             (revision::%tool-note (format nil "saved trace snapshot ~a (~d function~:p)" name (length (%traced-symbols)))))))
         (t                                          ; restore
          (let* ((idx (position pick choices :test #'string=))
                 (snap (nth (1- idx) *trace-snapshots*)))
            (when snap
              (ignore-errors (eval '(untrace)))
              (dolist (s (cdr snap)) (ignore-errors (eval (list 'trace s))))
-             (%tool-note (format nil "restored snapshot ~a: tracing ~d function~:p"
+             (revision::%tool-note (format nil "restored snapshot ~a: tracing ~d function~:p"
                                  (car snap) (length (cdr snap)))))))))))
 
 (defun do-untrace-all ()
   (ignore-errors (eval '(untrace)))
-  (%tool-note "untraced everything"))
+  (revision::%tool-note "untraced everything"))
 
 (defun do-traced-list ()
   (let ((syms (%traced-symbols)))

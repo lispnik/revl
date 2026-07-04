@@ -8,7 +8,7 @@
 ;;;; the live REPL's package (the same introspection the classic windows do:
 ;;;; DESCRIBE, SB-INTROSPECT arglists, the MOP, MACROEXPAND).
 
-(in-package #:revision)
+(in-package #:revl)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (require :sb-introspect))
@@ -292,8 +292,8 @@ for the \"Alt-I: inspect the focused item\" affordance across the object browser
   (let ((r (and *desktop* (find :repl (dt-windows *desktop*) :key #'window-kind))))
     (if (and r (repl-last-value-p r))
         (progn (setf *clip-object* (repl-last-value r) *clip-present* t)
-               (%tool-note (format nil "clipped *: ~a" (%insp-repr (repl-last-value r)))))
-        (%tool-note "no REPL value to clip yet — evaluate something first"))))
+               (revision::%tool-note (format nil "clipped *: ~a" (%insp-repr (repl-last-value r)))))
+        (revision::%tool-note "no REPL value to clip yet — evaluate something first"))))
 
 (defun do-inspect-clipped ()
   (if *clip-present*
@@ -305,8 +305,8 @@ for the \"Alt-I: inspect the focused item\" affordance across the object browser
 (defun do-insert-clipped ()
   "Insert the clipped object's printed form into the focused editor."
   (let ((te (%focused-editor)))
-    (cond ((not *clip-present*) (%tool-note "nothing clipped yet"))
-          ((null te) (%tool-note "focus an editor to insert the clipped object"))
+    (cond ((not *clip-present*) (revision::%tool-note "nothing clipped yet"))
+          ((null te) (revision::%tool-note "focus an editor to insert the clipped object"))
           (t (te-insert te (prin1-to-string *clip-object*)) (te-ensure-visible te) (invalidate te)))))
 
 ;;; --- register with the desktop: builders + an Inspect menu ------------------

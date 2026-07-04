@@ -7,7 +7,7 @@
 ;;;; introspection (sb-cltl2).  Each opens a revision output window; they hang off the
 ;;;; consolidated Lisp menu's "SBCL" submenu (see docs.lisp).
 
-(in-package #:revision)
+(in-package #:revl)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (ignore-errors (require :sb-cltl2)))                 ; declaration/variable/function-information
@@ -83,7 +83,7 @@ answers the useful part)."
 (defun do-gc-now ()
   (let ((before (sb-ext:get-bytes-consed)))
     (sb-ext:gc :full t)
-    (%tool-note (format nil "full GC done (~:d bytes consed up to now)" before))))
+    (revision::%tool-note (format nil "full GC done (~:d bytes consed up to now)" before))))
 
 ;;; --- evaluator mode ---------------------------------------------------------
 
@@ -91,7 +91,7 @@ answers the useful part)."
   "Switch SB-EXT:*EVALUATOR-MODE* between :COMPILE and :INTERPRET (how the REPL
 and LOAD evaluate top-level forms)."
   (setf sb-ext:*evaluator-mode* (if (eq sb-ext:*evaluator-mode* :compile) :interpret :compile))
-  (%tool-note (format nil "evaluator mode is now ~(~a~)" sb-ext:*evaluator-mode*)))
+  (revision::%tool-note (format nil "evaluator mode is now ~(~a~)" sb-ext:*evaluator-mode*)))
 
 ;;; --- package locks ----------------------------------------------------------
 
@@ -110,8 +110,8 @@ and LOAD evaluate top-level forms)."
     (when (and s (plusp (length (string-trim " " s))))
       (let ((p (find-package (string-upcase (string-trim " " s)))))
         (if p (progn (ignore-errors (funcall fn p))
-                     (%tool-note (format nil "~a ~a" verb (package-name p))))
-            (%tool-note (format nil "no such package: ~a" s)))))))
+                     (revision::%tool-note (format nil "~a ~a" verb (package-name p))))
+            (revision::%tool-note (format nil "no such package: ~a" s)))))))
 
 (defun do-lock-package ()   (%package-lock-op " Lock package "   "locked"   #'sb-ext:lock-package))
 (defun do-unlock-package () (%package-lock-op " Unlock package " "unlocked" #'sb-ext:unlock-package))

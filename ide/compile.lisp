@@ -5,7 +5,7 @@
 ;;;; notes stream into the transcript; interrupt aborts a runaway evaluation by
 ;;;; signalling the worker thread into its repl-abort restart.
 
-(in-package #:revision)
+(in-package #:revl)
 
 (defun %code-repl ()
   "Raise (opening if needed) the desktop REPL and return it."
@@ -21,7 +21,7 @@
 (defun %code-submit (r input)
   "Submit INPUT to the REPL, telling the user when it can't run (REPL busy)."
   (if (repl-busy r)
-      (%tool-note "REPL is busy — interrupt or wait for the current evaluation")
+      (revision::%tool-note "REPL is busy — interrupt or wait for the current evaluation")
       (repl-submit-string r input)))
 
 (defun do-load-buffer ()
@@ -49,7 +49,7 @@ warnings/notes into the REPL."
         (sb-thread:interrupt-thread
          (repl-worker r)
          (lambda () (let ((res (find-restart 'repl-abort))) (when res (invoke-restart res)))))
-        (%tool-note "nothing is evaluating"))))
+        (revision::%tool-note "nothing is evaluating"))))
 
 ;;; --- compiler notes: capture, gutter markers, navigable list ----------------
 ;;; SBCL is unique in signalling sb-ext:compiler-note conditions (boxing, generic
@@ -160,10 +160,10 @@ STATUS :ok or an error string, each note (:severity KW :pos INT :message STR)."
 mark the offending lines in the gutter and open a navigable notes list."
   (let ((te (%focused-editor)))
     (if (null te)
-        (%tool-note "Focus an editor window first.")
+        (revision::%tool-note "Focus an editor window first.")
         (let ((text (te-text te)) (pkg (%active-package))
               (name (if (te-filename te) (file-namestring (te-filename te)) "buffer")))
-          (%tool-note (format nil "compiling ~a for notes …" name))
+          (revision::%tool-note (format nil "compiling ~a for notes …" name))
           (sb-thread:make-thread
            (lambda ()
              (handler-case

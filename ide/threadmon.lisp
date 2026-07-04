@@ -6,7 +6,7 @@
 ;;;; through the worker->UI bridge (real changing data, not a demo clock), and
 ;;;; reactive repaint -- no integer commands, no dispatch COND, no manual geometry.
 
-(in-package #:revision)
+(in-package #:revl)
 
 (defvar *tm-threads* '() "Thread objects shown in the list, captured at refresh.")
 (defvar *worker-n* 0)

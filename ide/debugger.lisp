@@ -10,7 +10,7 @@
 ;;;; Reading another frame's locals and forcing its return is an SBCL capability
 ;;;; other Lisps don't expose.
 
-(in-package #:revision)
+(in-package #:revl)
 
 (defun %ellipsize (s n)
   (if (> (length s) n) (concatenate 'string (subseq s 0 (1- n)) "…") s))

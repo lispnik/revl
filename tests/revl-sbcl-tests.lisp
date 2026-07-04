@@ -13,7 +13,7 @@
  (list :source-registry (list :tree (uiop:getcwd))
        (list :tree (merge-pathnames "../" (uiop:getcwd))) :inherit-configuration))
 (handler-bind ((warning #'muffle-warning)) (asdf:load-system :revl))
-(in-package #:revision)
+(in-package #:revl)
 
 (defvar *pass* 0) (defvar *fail* 0)
 (defmacro check (desc form)

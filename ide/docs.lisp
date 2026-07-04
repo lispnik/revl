@@ -5,7 +5,7 @@
 ;;;; render it in the doc browser; the symbol -> CLHS URL map comes from
 ;;;; *HYPERSPEC-URL-FN* (revl's hyperspec-url).
 
-(in-package #:revision)
+(in-package #:revl)
 
 ;;; (funcall fn NAME) -> the symbol's HyperSpec page URL, or NIL.
 (defvar *hyperspec-url-fn* nil)

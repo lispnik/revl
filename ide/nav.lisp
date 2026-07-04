@@ -4,7 +4,7 @@
 ;;;; definition sources and its callers/references/binders/setters become rows
 ;;;; in a clickable table window that opens the source file at the right line.
 
-(in-package #:revision)
+(in-package #:revl)
 
 (defun %offset-to-line (path char-offset)
   "1-based line number for CHAR-OFFSET in PATH (or 1)."
@@ -38,7 +38,7 @@ Records the current editor location first so Pop back can return to it."
 (defun do-pop-back ()
   "Return to the location saved before the last go-to-definition / xref jump."
   (if (null *location-stack*)
-      (%tool-note "location stack is empty — nothing to pop back to")
+      (revision::%tool-note "location stack is empty — nothing to pop back to")
       (let ((loc (pop *location-stack*)))
         (%open-file-at (car loc) (cdr loc)))))
 

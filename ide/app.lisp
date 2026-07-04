@@ -6,7 +6,7 @@
 ;;;; a window, it takes over the screen, and closing it returns to the menu.
 ;;;; This is the "revl on revision" entry point that the revl project drives.
 
-(in-package #:revision)
+(in-package #:revl)
 
 (defparameter *app-windows*
   (list (cons "Lisp REPL"             #'run-repl)
@@ -66,10 +66,10 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
                 (list "Change dir…"    (lambda () (let ((p (make-file-dialog :dir *project-dir* :dirs-only t :title " Change dir ")))
                                                     (when p (setf *project-dir* (uiop:ensure-directory-pathname p))))))
                 :--
-                (list "Save"           (lambda () (%dt-save dt)) :f2 (any-win))
-                (list "Save as…"       (lambda () (%dt-save-as dt)) nil (any-win))
-                (list "Save all"       (lambda () (%dt-save-all dt)) nil (any-win))
-                (list "Reload file"    (lambda () (%dt-reload dt)) nil (any-win))
+                (list "Save"           (lambda () (revision::%dt-save dt)) :f2 (any-win))
+                (list "Save as…"       (lambda () (revision::%dt-save-as dt)) nil (any-win))
+                (list "Save all"       (lambda () (revision::%dt-save-all dt)) nil (any-win))
+                (list "Reload file"    (lambda () (revision::%dt-reload dt)) nil (any-win))
                 :--
                 (list "Save transcript…"  (lambda () (%dt-save-transcript dt)))
                 (list "Save Lisp script…" (lambda () (%dt-save-script dt)))
@@ -99,7 +99,7 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
         (declare (ignore dt))
         (list "Options"
               (list "Eval timing"     (lambda () (setf *repl-time* (not *repl-time*))
-                                        (%tool-note (if *repl-time* "eval timing ON" "eval timing OFF"))))))
+                                        (revision::%tool-note (if *repl-time* "eval timing ON" "eval timing OFF"))))))
       *extra-menus*)
 
 (push (lambda (dt)
@@ -114,5 +114,14 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
                     (list "HTML browser"    (lambda () (dt-open dt (lambda () (make-help :html)))))
                     (list "Thread monitor"  (lambda () (dt-open dt (lambda () (make-help :threads))))))
               :--
-              (list "About…"          (lambda () (%about-dialog)))))
+              (list "About…"          (lambda () (revision::%about-dialog)))))
       *extra-menus*)
+
+;;; contribute the IDE's keymaps to the (toolkit-owned) keybinding reference, so the
+;;; generated KEYBINDINGS.md documents the Inspector / Project / REPL / Call-tree keys.
+(setf revision:*reference-keymaps*
+      (append revision:*reference-keymaps*
+              (list (cons "Inspector"    '*inspector-keys*)
+                    (cons "Project tree" '*proj-keys*)
+                    (cons "REPL input"   '*repl-input-keys*)
+                    (cons "Call-tree"    '*call-tree-keys*))))

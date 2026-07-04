@@ -6,10 +6,7 @@
 ;;;; git/grep, profiling, CLHS) lives in `revl-logic'.  This file installs that logic
 ;;;; into revision's extension hooks (INSTALL-REVL-LOGIC) and launches the IDE.
 
-(defpackage #:revl
-  (:use #:cl)
-  (:documentation "revl: a SLIME-class Lisp IDE on the revision framework.")
-  (:export #:main #:toplevel))
+;;; the REVL package is defined in ide/package.lisp (it USES revision).
 
 (in-package #:revl)
 
@@ -35,22 +32,22 @@
 (defun revl-repl-eval (win input)
   "Worker thread: evaluate INPUT for the revision REPL window WIN using revl's
 backend, then post output + results + new package back through revision's UI bridge."
-  (let* ((hist (revision:repl-hist-vars win)))
+  (let* ((hist (repl-hist-vars win)))
     (multiple-value-bind (output results new-pkg errored new-hist)
         (restart-case
             ;; route break (invoke-debugger) and single-step (step-condition --
             ;; the SBCL stepper bypasses *debugger-hook*) to revision's cross-thread
             ;; debugger too, so TRACE :break and (step ...) work in-UI
-            (let ((*debugger-hook* (lambda (c hook) (declare (ignore hook)) (revision::%repl-debug win c))))
-              (handler-bind ((sb-ext:step-condition (lambda (c) (revision::%repl-debug win c))))
-                (revl-logic::repl-backend-eval input (revision:repl-package win)
-                         (lambda (e) (revision::%repl-debug win e))    ; reuse revision's cross-thread SLDB debugger
+            (let ((*debugger-hook* (lambda (c hook) (declare (ignore hook)) (%repl-debug win c))))
+              (handler-bind ((sb-ext:step-condition (lambda (c) (%repl-debug win c))))
+                (revl-logic::repl-backend-eval input (repl-package win)
+                         (lambda (e) (%repl-debug win e))    ; reuse revision's cross-thread SLDB debugger
                          hist)))
-          (revision::repl-abort () (values "" nil (revision:repl-package win) t hist)))   ; debugger's abort lands here
-      (setf (revision:repl-hist-vars win) new-hist)
+          (repl-abort () (values "" nil (repl-package win) t hist)))   ; debugger's abort lands here
+      (setf (repl-hist-vars win) new-hist)
       (let ((lastvals (car (last results))))                  ; remember the primary result (object clipboard)
         (when (and (not errored) lastvals)
-          (setf (revision:repl-last-value win) (first lastvals) (revision:repl-last-value-p win) t)))
+          (setf (repl-last-value win) (first lastvals) (repl-last-value-p win) t)))
       ;; pair each result object with its printed form so the transcript can show
       ;; it as a clickable presentation (SLY-style: click to inspect the object)
       (let ((result-entries (let ((*package* new-pkg))
@@ -59,7 +56,7 @@ backend, then post output + results + new package back through revision's UI bri
                                       collect (if vals (mapcar (lambda (o) (cons o (prin1-to-string o))) vals) :none))))))
         (revision:run-on-ui
          (lambda ()
-           (let ((sb (revision:find-view win 'revision::transcript)))
+           (let ((sb (revision:find-view win 'transcript)))
              (when sb
                (when (plusp (length output))
                  (revision:scrollback-append sb output)
@@ -70,8 +67,8 @@ backend, then post output + results + new package back through revision's UI bri
                      (revision:scrollback-append sb (format nil "; No values~%"))
                      (dolist (pair entry)
                        (revision:scrollback-present sb (format nil "=> ~a~%" (cdr pair)) (car pair)))))))
-           (setf (revision:repl-package win) new-pkg (revision:repl-busy win) nil)
-           (revision::%repl-update-prompt win)))))))
+           (setf (repl-package win) new-pkg (repl-busy win) nil)
+           (%repl-update-prompt win)))))))
 
 ;;; eval-defun / eval-region: the editor's Eval chip evaluates the selection, or (if
 ;;; none) the top-level form at the cursor (via revl-logic's %TOPLEVEL-FORM-AT-OFFSET),
@@ -87,10 +84,10 @@ backend, then post output + results + new package back through revision's UI bri
          (form (if (not (%blankp sel)) sel
                    (revl-logic::%toplevel-form-at-offset text off))))
     (unless (%blankp form)
-      (let ((repl (revision:ensure-repl)))
+      (let ((repl (ensure-repl)))
         (when repl
           (revision::dt-raise revision:*desktop* repl) (revision:invalidate revision:*desktop*)   ; show the result
-          (revision:repl-submit-string repl (string-trim '(#\Space #\Tab #\Newline #\Return) form)))))))
+          (repl-submit-string repl (string-trim '(#\Space #\Tab #\Newline #\Return) form)))))))
 
 ;;; Editor completion + bracket matching: package-aware symbol completion against the
 ;;; live image (REPL-BACKEND-COMPLETIONS, resolving the buffer's IN-PACKAGE via
@@ -223,7 +220,7 @@ per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
 (defun main ()
   "Run the revision-based revl IDE until the user quits the launcher."
   (install-revl-logic)
-  (revision:run-app))
+  (run-app))
 
 (defun toplevel ()
   "Dumped-executable entry point: run the IDE, report a fatal error cleanly, exit."

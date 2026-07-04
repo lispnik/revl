@@ -6,7 +6,7 @@
 ;;;; INPUT-LINE over a LIST-BOX, a detail line, Enter to act.  Instantiated below
 ;;;; for packages and ASDF systems on real data.
 
-(in-package #:revision)
+(in-package #:revl)
 
 (defun make-browser (title all-items on-activate &optional item->object)
   "Build a filterable browser over ALL-ITEMS (strings).  Typing in the filter
