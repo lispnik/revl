@@ -9,11 +9,7 @@
 ;;;;
 ;;;; Extends the REVISION package (the package belongs to the revision base).
 
-(in-package #:revision)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(repl-backend-eval repl-backend-completions longest-common-prefix)
-          '#:revision))
+(in-package #:revl-logic)
 
 ;;; --- per-listener CL history variables -------------------------------------
 

@@ -11,10 +11,7 @@
 ;;;; It extends the REVISION package (the package now belongs to the revision base), so
 ;;;; the revision hooks can FIND-SYMBOL these by name in :REVISION.
 
-(in-package #:revision)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(*lisp-indent-hook*) '#:revision))
+(in-package #:revl-logic)
 
 ;;; --- bracket matching (offset-based) ---------------------------------------
 

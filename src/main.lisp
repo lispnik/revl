@@ -26,7 +26,7 @@
 (defun revl-indent (te)
   "Indent a fresh line using revl's Lisp indenter."
   (or (ignore-errors
-       (revision::%lisp-indent-at (revision:te-text te) (%line-offset te (revision::te-cy te))))
+       (revl-logic::%lisp-indent-at (revision:te-text te) (%line-offset te (revision::te-cy te))))
       0))
 
 ;;; Stage 2: the REPL evaluator.  Replace revision's hand-rolled eval loop with
@@ -45,7 +45,7 @@ backend, then post output + results + new package back through revision's UI bri
             ;; debugger too, so TRACE :break and (step ...) work in-UI
             (let ((*debugger-hook* (lambda (c hook) (declare (ignore hook)) (revision::%repl-debug win c))))
               (handler-bind ((sb-ext:step-condition (lambda (c) (revision::%repl-debug win c))))
-                (revision::repl-backend-eval input (revision:repl-package win)
+                (revl-logic::repl-backend-eval input (revision:repl-package win)
                          (lambda (e) (revision::%repl-debug win e))    ; reuse revision's cross-thread SLDB debugger
                          hist)))
           (revision::repl-abort () (values "" nil (revision:repl-package win) t hist)))   ; debugger's abort lands here
@@ -105,11 +105,11 @@ package the buffer's IN-PACKAGE form selects (falling back to *PACKAGE*)."
   (let ((upto (+ (%line-offset te (revision::te-cy te)) (revision::te-cx te))))
     (let ((pkg (or (ignore-errors (find-package (revl-logic::%buffer-in-package (revision:te-text te) upto)))
                    *package*)))
-      (ignore-errors (revision::repl-backend-completions token pkg)))))
+      (ignore-errors (revl-logic::repl-backend-completions token pkg)))))
 
 (defun revl-repl-completions (token package)
   "REPL Tab-completion candidates for TOKEN in the listener's PACKAGE."
-  (ignore-errors (revision::repl-backend-completions token (or package *package*))))
+  (ignore-errors (revl-logic::repl-backend-completions token (or package *package*))))
 
 ;;; Stage 5: project manager.  Two more revision hooks reuse revl's real PM logic:
 ;;; git status badges (%GIT-STATUS-MAP -> relpath/:modified/:added) and
@@ -214,10 +214,10 @@ per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
         revision:*editor-eval-fn*        #'revl-editor-eval          ; stage 3: eval-defun / eval-region
         revision:*editor-completions-fn* #'revl-editor-completions   ; stage 4: symbol completion
         revision:*repl-completions-fn*   #'revl-repl-completions     ; REPL Tab completion
-        revision:*paren-matcher*         #'revision::%paren-match-offset   ; bracket match
+        revision:*paren-matcher*         #'revl-logic::%paren-match-offset   ; bracket match
         revision:*project-status-fn*     #'revl-project-status             ; git status badges
         revision:*project-grep-fn*       #'revl-project-grep               ; find-in-files
-        revision:*object->outline-fn*    #'revision::object->outline       ; object inspector
+        revision:*object->outline-fn*    #'revl-logic::object->outline       ; object inspector
         revision:*profile-fn*            #'revl-logic::run-profile         ; sb-sprof profiler
         revision:*paredit-fn*            #'revl-paredit                    ; paredit
         revision:*reorder-fn*            #'revl-reorder                    ; reorder args at call sites
