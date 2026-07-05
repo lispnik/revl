@@ -40,6 +40,18 @@
       (setf (sb-iprompt sb) (if (repl-busy win) "…eval" (repl-prompt-string win)))
       (invalidate sb))))
 
+;;; --- desktop persistence: restore the listener's package + input history ----
+(defmethod window-save-state ((w repl-window))
+  "The listener's current package (sticky IN-PACKAGE) and its recent input history."
+  (list :package (package-name (repl-package w))
+        :history (let ((h (repl-history w))) (subseq h 0 (min 200 (length h))))))
+
+(defmethod window-restore-state ((w repl-window) state)
+  (let ((pkg (and (getf state :package) (find-package (getf state :package)))))
+    (when pkg (setf (repl-package w) pkg)))
+  (setf (repl-history w) (getf state :history))
+  (%repl-update-prompt w))
+
 (defun string-blank-p (s)
   (every (lambda (c) (member c '(#\Space #\Tab #\Newline #\Return))) s))
 

@@ -61,7 +61,8 @@ git status badge from STATUS (a relpath -> keyword hash, or NIL)."
                     nodes)
               (let* ((sub (uiop:ensure-directory-pathname (merge-pathnames head dir)))
                      (sub-entries (mapcar (lambda (e) (cons (rest (car e)) (cdr e))) es))
-                     (node (revision:make-outline-node (format nil "~a/" head))))
+                     ;; DATA is the directory's abspath (so expansion can be saved/restored)
+                     (node (revision:make-outline-node (format nil "~a/" head) nil (namestring sub))))
                 (setf (revision:outline-node-loader node) (lambda () (%fs-nodes sub-entries sub status)))
                 (push node nodes)))))
       (setf nodes (nreverse nodes))
@@ -313,6 +314,51 @@ So the git status window operates on whichever root the selection belongs to."
 
 ;;; *project-dir* (the default root for file dialogs) is a toolkit var now —
 ;;; revision's dialogs.lisp; the Change-dir command still sets it.
+
+;;; --- desktop persistence: restore extra roots + which folders are expanded --
+
+(defun %pm-expanded-paths (win)
+  "Abspaths of the currently-expanded directory nodes, for saving with the layout.
+Roots have no loader but are expanded, so recursion is not gated on being a directory."
+  (let ((ol (find-view win 'tree)) (acc '()))
+    (when ol
+      (labels ((walk (nodes)
+                 (dolist (n nodes)
+                   (when (and (revision:outline-node-loader n)          ; an expanded directory node
+                              (revision:outline-node-expanded n) (revision:outline-node-data n))
+                     (push (revision:outline-node-data n) acc))
+                   (when (revision:outline-node-expanded n)             ; descend into any open node
+                     (walk (revision:outline-node-children n))))))
+        (walk (revision:outline-roots ol))))
+    (nreverse acc)))
+
+(defun %pm-reexpand-paths (win paths)
+  "Re-expand the directory nodes whose abspath is in PATHS (loading lazy children as it
+descends), reopening the folders that were open when the layout was saved."
+  (let ((ol (find-view win 'tree)) (set (and paths (remove-duplicates paths :test #'equal))))
+    (when (and ol set)
+      (labels ((walk (nodes)
+                 (dolist (n nodes)
+                   (when (and (revision:outline-node-loader n)
+                              (member (revision:outline-node-data n) set :test #'equal))
+                     (setf (revision:outline-node-expanded n) t)
+                     (revision:outline-ensure-children n))
+                   (when (revision:outline-node-expanded n)             ; descend into any open node
+                     (walk (revision:outline-node-children n))))))
+        (walk (revision:outline-roots ol))
+        (invalidate ol)))))
+
+(defmethod window-save-state ((w project-window))
+  "The extra project roots and which folders are expanded."
+  (list :roots (mapcar #'namestring (pw-extra-dirs w))
+        :open  (%pm-expanded-paths w)))
+
+(defmethod window-restore-state ((w project-window) state)
+  (dolist (r (getf state :roots))
+    (let ((d (ignore-errors (uiop:ensure-directory-pathname r))))
+      (when (and d (probe-file d)) (pushnew (truename d) (pw-extra-dirs w) :test #'equal))))
+  (%pm-rebuild w)
+  (%pm-reexpand-paths w (getf state :open)))
 
 (defun make-project (&optional (dir *project-dir*))
   "Build a project-manager window for DIR.  Return (values WINDOW FOCUS)."

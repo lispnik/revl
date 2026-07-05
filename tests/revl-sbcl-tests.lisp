@@ -191,5 +191,38 @@
          (equal (namestring (%pm-focus-root pw)) (namestring (pw-dir pw)))))
 
 ;;; ===========================================================================
+;;; desktop persistence: each window contributes restorable state (WINDOW-SAVE-STATE
+;;; / WINDOW-RESTORE-STATE), so a saved layout reopens a full session, not just windows.
+;;; ===========================================================================
+(format t "~%## desktop persistence~%")
+(let* ((w (make-editor)) (te (find-view w 'edit)))
+  (te-set-text te "PERSISTED-SCRATCH") (setf (te-modified te) t)
+  (let ((st (window-save-state w)) (w2 (make-editor)))
+    (check "editor save-state captures unsaved scratch text" (equal (second st) "PERSISTED-SCRATCH"))
+    (window-restore-state w2 st)
+    (check "editor restore-state restores the text"
+           (search "PERSISTED-SCRATCH" (te-text (find-view w2 'edit))))))
+(let ((w (make-repl)))
+  (setf (repl-package w) (find-package :keyword) (repl-history w) '("(+ 1 2)" "(list :a)"))
+  (let ((st (window-save-state w)) (w2 (make-repl)))
+    (check "REPL save-state captures package + input history"
+           (and (equal (getf st :package) "KEYWORD") (equal (getf st :history) '("(+ 1 2)" "(list :a)"))))
+    (window-restore-state w2 st)
+    (check "REPL restore-state restores package + history"
+           (and (eq (repl-package w2) (find-package :keyword))
+                (equal (repl-history w2) '("(+ 1 2)" "(list :a)"))))))
+(let* ((base (namestring (uiop:getcwd))) (w (make-project base)) (ol (find-view w 'tree))
+       (dir (find-if #'outline-node-loader (outline-node-children (first (outline-roots ol))))))
+  (when dir (setf (outline-node-expanded dir) t) (outline-ensure-children dir))
+  (let ((st (window-save-state w)) (w2 (make-project base)))
+    (check "project save-state records the expanded folder"
+           (and dir (member (outline-node-data dir) (getf st :open) :test #'equal)))
+    (window-restore-state w2 st)
+    (let ((dir2 (and dir (find (outline-node-data dir)
+                               (outline-node-children (first (outline-roots (find-view w2 'tree))))
+                               :key #'outline-node-data :test #'equal))))
+      (check "project restore-state re-expands the folder" (and dir2 (outline-node-expanded dir2))))))
+
+;;; ===========================================================================
 (format t "~%~d passed, ~d failed~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))
