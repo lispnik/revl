@@ -15,13 +15,27 @@
   "A window over a TABLE-VIEW.  COLUMNS = list of (TITLE WIDTH ACCESSOR); ROWS =
 row objects.  ON-ACTIVATE (tv row) fires on Enter/double-click.  Return (values
 WINDOW FOCUS)."
-  (let* ((win  (make-instance 'window :title title :keymap *global-keys*))
+  (let* ((win  (make-instance 'table-window :title title :keymap *global-keys*))
          (body (ui (stack
                      (:fill (table-view :name 'tbl :columns columns :rows rows :on-activate on-activate))
                      (1 (static-text :role :status :text " ↑/↓ · PgUp/PgDn select · Enter: open · Esc: close "))))))
     (add-subview win body)
     (setf (window-scroll-target win) (find-view win 'tbl) (window-help win) help)
     (values win (find-view win 'tbl))))
+
+;;; Desktop persistence for table windows -- defined here (not in revision) so the 'tbl
+;;; view name matches the package that builds them.
+(defmethod window-save-state ((w table-window))
+  (let ((tv (find-view w 'tbl)))
+    (when tv (list :top (table-top tv) :sel (table-selected tv) :hleft (table-hleft tv)))))
+
+(defmethod window-restore-state ((w table-window) state)
+  (let ((tv (find-view w 'tbl)))
+    (when tv
+      (let ((n (length (table-rows tv))))
+        (when (getf state :sel)   (setf (table-selected tv) (max 0 (min (getf state :sel) (max 0 (1- n))))))
+        (when (getf state :top)   (setf (table-top tv) (max 0 (min (getf state :top) (max 0 (1- n))))))
+        (when (getf state :hleft) (setf (table-hleft tv) (max 0 (getf state :hleft))))))))
 
 ;;; --- tracing (standard TRACE / UNTRACE) -------------------------------------
 

@@ -222,6 +222,28 @@
                                (outline-node-children (first (outline-roots (find-view w2 'tree))))
                                :key #'outline-node-data :test #'equal))))
       (check "project restore-state re-expands the folder" (and dir2 (outline-node-expanded dir2))))))
+;; project primary root round-trips (was fixed to *project-dir* before)
+(let* ((base (namestring (uiop:getcwd))) (w (make-project base)))
+  (let ((st (window-save-state w)) (w2 (make-project "/tmp/")))
+    (check "project save-state records the primary root" (search "revl" (getf st :dir)))
+    (window-restore-state w2 st)
+    (check "project restore-state restores the primary root" (search "revl" (namestring (pw-dir w2))))))
+;; HTML browser: current page (+ scroll) round-trips
+(multiple-value-bind (w1 d1 o1) (revision::make-html) (declare (ignore d1))
+  (funcall o1 nil)
+  (check "HTML save-state captures the current page" (equal (getf (window-save-state w1) :page) "index"))
+  (multiple-value-bind (w2 d2 o2) (revision::make-html) (declare (ignore d2))
+    (window-restore-state w2 '(:page "index" :top 2)) (funcall o2 nil)
+    (check "HTML restore-state navigates to the saved page" (equal (revision::html-window-page w2) "index"))))
+;; table window: selection + scroll round-trip
+(let* ((w (make-package-table)) (tv (find-view w 'tbl)))
+  (setf (table-selected tv) 5 (table-top tv) 3)
+  (let ((st (window-save-state w)) (w2 (make-package-table)))
+    (check "table save-state captures selection + scroll" (and (eql (getf st :sel) 5) (eql (getf st :top) 3)))
+    (window-restore-state w2 st)
+    (let ((tv2 (find-view w2 'tbl)))
+      (check "table restore-state restores selection + scroll"
+             (and (= (table-selected tv2) 5) (= (table-top tv2) 3))))))
 
 ;;; ===========================================================================
 (format t "~%~d passed, ~d failed~%" *pass* *fail*)

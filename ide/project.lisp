@@ -349,11 +349,14 @@ descends), reopening the folders that were open when the layout was saved."
         (invalidate ol)))))
 
 (defmethod window-save-state ((w project-window))
-  "The extra project roots and which folders are expanded."
-  (list :roots (mapcar #'namestring (pw-extra-dirs w))
+  "The primary + extra project roots, and which folders are expanded."
+  (list :dir   (namestring (pw-dir w))
+        :roots (mapcar #'namestring (pw-extra-dirs w))
         :open  (%pm-expanded-paths w)))
 
 (defmethod window-restore-state ((w project-window) state)
+  (let* ((d (getf state :dir)) (dir (and d (ignore-errors (uiop:ensure-directory-pathname d)))))
+    (when (and dir (probe-file dir)) (setf (pw-dir w) dir)))   ; restore the primary root
   (dolist (r (getf state :roots))
     (let ((d (ignore-errors (uiop:ensure-directory-pathname r))))
       (when (and d (probe-file d)) (pushnew (truename d) (pw-extra-dirs w) :test #'equal))))
