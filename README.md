@@ -61,11 +61,12 @@ that knows nothing about Lisp IDEs; revl is what you build on it.  Three parts:
 - **`src/main.lisp`** — installs that logic into `revision`'s editor extension hooks and
   launches the desktop.
 
-The demo below tours the complete IDE: the full menu bar, paredit + line numbers
-in the editor, source navigation (go-to-definition), and a live HyperSpec lookup
-— alongside the tracing / stepping / profiling / inspector tools:
+The demo below shows the core: the full IDE menu bar, the **threaded REPL**
+(background evaluation with live output + Tab-completion), a syntax-highlighting
+**editor**, and **window tiling** — with the deeper tools (paredit, source navigation,
+tracing / stepping / profiling, the inspector, a live HyperSpec lookup) detailed below:
 
-![revl on the revision CLOS kernel](media/tv2-ide.gif)
+![revl on the revision kernel: the threaded REPL evaluates a form, Tab-completion, a syntax-highlighting editor, and the REPL + editor tiled side by side](media/tv2-ide.gif)
 
 At a glance — the tools it ships (each detailed below):
 
