@@ -23,9 +23,13 @@ live HyperSpec lookup).
   ```sh
   git clone git@github.com:lispnik/revision.git   # alongside this revl checkout
   ```
-- **No external Lisp dependencies** to build, run, or test — only SBCL + revision.
-  revl's framework-agnostic Lisp logic lives in a shared `revl-logic` system,
-  and the binary is dumped from the `revl` system.
+- The **[revision-term](https://github.com/lispnik/revision-term)** widget (also a
+  sibling, `./systems/revision-term`) backs the **Terminal** window (Tools ▸ Terminal).
+  It is the one component with third-party requirements — **CFFI**,
+  `cffi-callback-closures`, and the **libvterm** C library (e.g. `brew install libvterm`).
+- **Otherwise, no external Lisp dependencies** — the rest of the IDE builds and runs on
+  SBCL + revision alone.  revl's framework-agnostic Lisp logic lives in a shared
+  `revl-logic` system, and the binary is dumped from the `revl` system.
 
 ## Building & running
 
@@ -505,6 +509,12 @@ button, and an **overwrite confirmation** before it replaces an existing file.
   terminal's system clipboard so you can paste it into any other app.
 
 ![Emoji palette: filter by Unicode name and copy a glyph to the clipboard](media/emoji-palette.gif)
+- **Terminal** (Tools ▸ Terminal) — a real terminal window inside the IDE, backed by the
+  reusable **[revision-term](https://github.com/lispnik/revision-term)** widget: it runs a
+  child process (your `$SHELL`, `vi`, `top`, …) on a pseudo-terminal, emulates it with
+  **libvterm**, and renders the live screen into a revision view — full 24-bit colour,
+  text styles, wide CJK/emoji.  **Ctrl-\\** closes it; **Shift-PgUp/PgDn** scrolls the
+  scrollback.
 
 ![Browsing the Common Lisp HyperSpec in the THtmlView control](media/hyperspec.gif)
 

@@ -82,6 +82,10 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
                 (list "Exit"           (lambda () (setf *app-done* t)) (cons #\x revision::+md-alt+)))))
       *extra-menus*)
 
+;; The Terminal window is the reusable revision-term widget (libvterm-backed): a
+;; real shell/child process on a pty, emulated and rendered into a revision view.
+(pushnew (cons :terminal (lambda () (revision-term:make-terminal))) *window-builders* :key #'car)
+
 (push (lambda (dt)
         (list "Tools"
               (list "Lisp REPL"       (lambda () (dt-open dt :repl))
@@ -90,6 +94,7 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
               (list "Package browser" (lambda () (dt-open dt :packages)))
               (list "ASDF systems"    (lambda () (dt-open dt :systems)))
               (list "Thread monitor"  (lambda () (dt-open dt :threads)))
+              (list "Terminal"        (lambda () (dt-open dt :terminal)))
               (list "HTML browser"    (lambda () (dt-open dt :html)))
               (list "Package table"   (lambda () (dt-open dt :ptable)))
               (list "Emoji palette"   (lambda () (dt-open dt :emoji)))))

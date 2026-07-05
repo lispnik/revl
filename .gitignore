@@ -13,7 +13,8 @@
 /ocicl/
 
 # NOTE: ocicl.csv (the dependency pin manifest) IS committed.
-# systems/revision is a committed symlink to the sibling ../revision project
-# (tvision is not on ocicl).  Ignore everything else under systems/.
+# systems/revision and systems/revision-term are committed symlinks to the sibling
+# ../revision and ../revision-term projects (not on ocicl).  Ignore everything else.
 /systems/*
 !/systems/revision
+!/systems/revision-term
