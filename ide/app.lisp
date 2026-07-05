@@ -94,6 +94,7 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
               (list "Package browser" (lambda () (dt-open dt :packages)))
               (list "ASDF systems"    (lambda () (dt-open dt :systems)))
               (list "Thread monitor"  (lambda () (dt-open dt :threads)))
+              (list "Git status"      (lambda () (open-git-status dt)))
               (list "Terminal"        (lambda () (dt-open dt :terminal)))
               (list "HTML browser"    (lambda () (dt-open dt :html)))
               (list "Package table"   (lambda () (dt-open dt :ptable)))
@@ -128,5 +129,6 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
       (append revision:*reference-keymaps*
               (list (cons "Inspector"    '*inspector-keys*)
                     (cons "Project tree" '*proj-keys*)
+                    (cons "Git status"   '*git-status-keys*)
                     (cons "REPL input"   '*repl-input-keys*)
                     (cons "Call-tree"    '*call-tree-keys*))))

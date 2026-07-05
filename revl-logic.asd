@@ -17,4 +17,5 @@
                              (:file "lisp-text")       ; indentation + bracket matching
                              (:file "repl-backend")    ; read/eval/print, completion, history vars
                              (:file "inspect")         ; object->outline (inspector model)
-                             (:file "app-logic")))))   ; sexp/git/grep/profile/http/CLHS
+                             (:file "app-logic")        ; sexp/git/grep/profile/http/CLHS
+                             (:file "git-status")))))   ; git porcelain for the status window

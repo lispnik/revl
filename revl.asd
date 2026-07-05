@@ -34,6 +34,7 @@
                              (:file "sbcl")
                              (:file "docs")
                              (:file "desktop-ide")   ; REPL/table glue pulled out of the toolkit desktop
+                             (:file "git-status")    ; the Magit-style git status window
                              (:file "app")))
                (:module "src"
                 :components ((:file "main")))))

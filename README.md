@@ -517,6 +517,13 @@ button, and an **overwrite confirmation** before it replaces an existing file.
   **libvterm**, and renders the live screen into a revision view — full 24-bit colour,
   text styles, wide CJK/emoji.  **Ctrl-\\** closes it; **Shift-PgUp/PgDn** scrolls the
   scrollback.
+- **Git status** (Tools ▸ Git status) — a Magit-style, keyboard-driven view of the working
+  tree: the current branch in the title and the changes grouped into **Staged** /
+  **Unstaged** / **Untracked** sections, each file expandable to its diff.  Keys act on the
+  focused file: **`s`** stage, **`u`** unstage, **`k`** discard (with confirm), **`c`**
+  commit (prompts for a message), **`g`** refresh, and **Enter** expands/collapses the diff.
+  Single-instance; re-opening raises and refreshes it.  The git porcelain lives in
+  `revl-logic` (over plain `git`), so there is no new dependency.
 
 ![Browsing the Common Lisp HyperSpec in the THtmlView control](media/hyperspec.gif)
 

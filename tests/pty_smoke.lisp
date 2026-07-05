@@ -184,7 +184,12 @@
          (ctrl d #\a) (key d "del") (ctrl d #\v)
          (check d "the copied emoji pastes into an editor" (found? d "🎉"))
 
-         ;; 14. Window ▸ Close all clears the desktop
+         ;; 14. git status window opens in the integrated IDE (read-only here; the git
+         ;; porcelain + staging round-trip is covered by revl-sbcl-tests against a temp repo)
+         (open-menu d #\t) (menu-item d "Git status")
+         (check d "git status window opens (branch in title)" (wait-for d "Git status" :timeout 5))
+
+         ;; 15. Window ▸ Close all clears the desktop
          (open-menu d #\w) (menu-item d "Close all")
          (check d "Window > Close all removes every window"
                 (and (wait-gone d "Emoji palette" :timeout 3) (not (found? d "Lisp REPL")))))

@@ -91,6 +91,18 @@ view for Back).` |
 |-----|---------|
 | `Enter` | `Expand/collapse a directory, or open a file leaf in the editor.` |
 
+## Git status
+
+| Key | Command |
+|-----|---------|
+| `C` | `Commit the staged changes, prompting for a message.` |
+| `K` | `Discard the focused file's changes (with confirm).` |
+| `Enter` | `Expand/collapse the focused file's diff (or a section).` |
+| `Right` | `Expand/collapse the focused file's diff (or a section).` |
+| `G` | `Re-read git state.` |
+| `S` | `Stage the focused file.` |
+| `U` | `Unstage the focused file.` |
+
 ## REPL input
 
 | Key | Command |

@@ -138,5 +138,52 @@
        (null (unknown-command-bindings)))
 
 ;;; ===========================================================================
+;;; git status porcelain (revl-logic git-status.lisp) — temp-repo round-trip
+;;; ===========================================================================
+(format t "~%## git status~%")
+(let ((repo (uiop:ensure-directory-pathname
+             (format nil "~arevl-gs-~36r/" (uiop:temporary-directory) (get-universal-time)))))
+  (flet ((git (&rest args)
+           (sb-ext:run-program "git" (list* "-C" (namestring repo) args)
+                               :search t :output nil :error nil :wait t)))
+    (unwind-protect
+         (progn
+           (ensure-directories-exist repo)
+           (git "init" "-q") (git "config" "user.email" "t@e.x") (git "config" "user.name" "T")
+           (with-open-file (s (merge-pathnames "a.txt" repo) :direction :output :if-exists :supersede)
+             (write-line "one" s))
+           (git "add" "a.txt") (git "commit" "-qm" "init")
+           (with-open-file (s (merge-pathnames "a.txt" repo) :direction :output :if-exists :append)
+             (write-line "two" s))                                   ; modify -> unstaged
+           (with-open-file (s (merge-pathnames "b.txt" repo) :direction :output :if-exists :supersede)
+             (write-line "new" s))                                   ; untracked
+           (let ((root (revl-logic::git-root repo)))
+             (check "git-root finds the repo" (and root (stringp root)))
+             (check "git-current-branch is non-nil" (stringp (revl-logic::git-current-branch root)))
+             (multiple-value-bind (staged unstaged untracked) (revl-logic::git-status-sections root)
+               (check "nothing staged initially" (null staged))
+               (check "a.txt is unstaged" (member "a.txt" unstaged :key #'car :test #'string=))
+               (check "b.txt is untracked" (member "b.txt" untracked :key #'car :test #'string=)))
+             (check "git-file-diff shows an added line"
+                    (some (lambda (l) (and (plusp (length l)) (char= (char l 0) #\+)))
+                          (revl-logic::git-file-diff root "a.txt")))
+             (check "git-stage succeeds" (revl-logic::git-stage root "a.txt"))
+             (check "a.txt moves to staged"
+                    (member "a.txt" (revl-logic::git-status-sections root) :key #'car :test #'string=))
+             (check "git-unstage succeeds" (revl-logic::git-unstage root "a.txt"))
+             (check "a.txt no longer staged"
+                    (not (member "a.txt" (revl-logic::git-status-sections root) :key #'car :test #'string=)))
+             (revl-logic::git-stage root "a.txt")
+             (check "git-commit succeeds" (revl-logic::git-commit root "second"))
+             (check "nothing staged after commit" (null (revl-logic::git-status-sections root)))
+             (check "empty commit message is rejected" (not (revl-logic::git-commit root "   ")))
+             (check "git-discard deletes an untracked file"
+                    (and (revl-logic::git-discard root "b.txt" :untracked t)
+                         (not (probe-file (merge-pathnames "b.txt" repo)))))
+             (check "git-root is NIL outside a repo"
+                    (null (revl-logic::git-root (uiop:temporary-directory))))))
+      (ignore-errors (uiop:delete-directory-tree repo :validate (constantly t))))))
+
+;;; ===========================================================================
 (format t "~%~d passed, ~d failed~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))
