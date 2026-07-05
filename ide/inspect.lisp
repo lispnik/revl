@@ -122,11 +122,29 @@ row.  Return (values WINDOW FOCUS)."
                       (when sym (%open-output (format nil " ~a " item) (funcall detail-fn sym)))))
                   (and obj-fn (lambda (item)
                                 (let ((sym (gethash item tab)))
-                                  (and sym (funcall obj-fn sym))))))))
+                                  (and sym (funcall obj-fn sym)))))
+                  :key-hint (if obj-fn "d/i/g: describe/inspect/goto" "d/g: describe/goto")
+                  ;; per-row action keys: (d)escribe, (i)nspect, (g)oto source
+                  :on-key
+                  (lambda (lb item ks mods)
+                    (declare (ignore lb))
+                    (and (characterp ks) (zerop mods)
+                         (let ((sym (gethash item tab)))
+                           (and sym
+                                (cond
+                                  ((char-equal ks #\d)
+                                   (%open-output (format nil " Describe ~a " item) (%describe-text sym)) t)
+                                  ((and (char-equal ks #\i) obj-fn)
+                                   (let ((obj (funcall obj-fn sym)))
+                                     (when obj (funcall 'open-inspector obj item)))
+                                   t)
+                                  ((char-equal ks #\g)
+                                   (funcall '%goto-symbol sym item) t)
+                                  (t nil)))))))))
 
 (defun make-class-browser ()
-  "Browse every class in the image; Enter shows precedence list / slots / subs,
-Alt-I inspects the class object."
+  "Browse every class in the image; Enter shows precedence list / slots / subs;
+d describes, i inspects the class object, g goes to its source (Alt-I also inspects)."
   (make-symbol-browser " revision — Class browser (introspection) "
                        (%all-symbols (lambda (s) (find-class s nil))) #'%class-text
                        (lambda (s) (find-class s nil))))

@@ -72,14 +72,19 @@ Records the current editor location first so Pop back can return to it."
                     out))))))
     (remove-duplicates (nreverse out) :test #'equal)))
 
+(defun %goto-symbol (sym &optional (label (princ-to-string sym)))
+  "Jump to SYM's definition source: one location opens in an editor directly, several
+show a picker.  Shared by Go-to-definition and the symbol browsers' Goto key."
+  (let ((defs (and sym (%symbol-definitions sym))))
+    (cond ((null defs) (%open-output " Go to definition "
+                                     (format nil "No source location for ~a." label)))
+          ((null (cdr defs)) (open-source-at (second (first defs)) (third (first defs))))
+          (t (%show-locations (format nil " Definitions of ~a " label) defs)))))
+
 (defun do-goto-definition ()
   (let ((name (prompt-string " Go to definition " "Symbol:")))
     (when (and name (plusp (length (string-trim " " name))))
-      (let* ((sym (%read-in-active name)) (defs (and sym (%symbol-definitions sym))))
-        (cond ((null defs) (%open-output " Go to definition "
-                                         (format nil "No source location for ~a." name)))
-              ((null (cdr defs)) (open-source-at (second (first defs)) (third (first defs))))
-              (t (%show-locations (format nil " Definitions of ~a " name) defs)))))))
+      (%goto-symbol (%read-in-active name) name))))
 
 ;;; --- xref: who-calls / -references / -binds / -sets / -macroexpands ---------
 

@@ -8,13 +8,18 @@
 
 (in-package #:revl)
 
-(defun make-browser (title all-items on-activate &optional item->object)
+(defun make-browser (title all-items on-activate &optional item->object &key on-key key-hint)
   "Build a filterable browser over ALL-ITEMS (strings).  Typing in the filter
 narrows the list; Enter calls ON-ACTIVATE with the chosen item and a SETTER that
 writes the detail line.  When ITEM->OBJECT is supplied, Alt-I opens the object it
-returns for the focused item in the inspector.  Return (values WINDOW FOCUS)."
-    (let* ((hint (format nil " Tab: focus · type to filter · Enter: act~@[ · Alt-I: inspect~] · Esc: close "
-                         item->object))
+returns for the focused item in the inspector.  When ON-KEY is supplied, a key the
+list itself doesn't handle is offered to (ON-KEY LB ITEM KEYSYM MODS) -- returning
+non-NIL when it acts -- and KEY-HINT is shown in the status line.  Return (values
+WINDOW FOCUS)."
+    (let* ((hint (if key-hint      ; action keys up front so they survive the window width
+                     (format nil " Enter: open · ~a · type: filter · Esc: close " key-hint)
+                     (format nil " Tab: focus · type to filter · Enter: act~@[ · Alt-I: inspect~] · Esc: close "
+                             item->object)))
            (win (ui (window (:title title :keymap *global-keys*)
                      (stack
                        (1 (row (9 (static-text :role :label :text " Filter: "))
@@ -26,6 +31,7 @@ returns for the focused item in the inspector.  Return (values WINDOW FOCUS)."
                                                        (setf (list-items lb) items
                                                              (list-selected lb) 0 (list-top lb) 0)))))))
                        (:fill (list-box :name 'items :items all-items
+                                :on-key on-key
                                 :on-inspect (and item->object
                                                  (lambda (lb item) (declare (ignore lb))
                                                    (let ((obj (and item (funcall item->object item))))

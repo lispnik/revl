@@ -258,9 +258,11 @@ source).  Press **`/`** to start a fuzzy search; it never interferes with other
 keys:
 
 ![Fuzzy filtering across the IDE: the Symbol Browser, the window-list and Classes/Packages/Systems pickers, the cross-reference and method-browser results windows, and the class-hierarchy tree — all driven by one mixin, started with /](media/fuzzy-tour.gif)
-- **Class browser** — a **fuzzy-filtered** list of every class (press **`/`** to
-  filter, e.g. `strout` finds `STRING-OUTPUT-STREAM`); OK / Enter jumps to the
-  selected class's definition, Inspect opens it in the object inspector.
+- **Class browser** — a **fuzzy-filtered** list of every class (type to filter, e.g.
+  `strout` finds `STRING-OUTPUT-STREAM`); Enter shows its precedence list / slots /
+  subclasses, and per-row keys act on the focused class: **`d`** describes it, **`i`**
+  inspects the class object (Alt-I too), **`g`** goes to its source.  (The Function
+  browser shares the same **`d`** / **`g`** keys.)
 - **Package browser** — a fuzzy-filtered list (`/` to filter); OK / Enter
   switches the listener's current package, Inspect opens it in the inspector.
 - **ASDF System browser** (load on Enter), **Load buffer** (evaluate an editor
