@@ -30,6 +30,11 @@ jobs:
         with:
           repository: lispnik/revision-term
           path: common-lisp/revision-term
+      - name: Checkout cffi-callback-closures (revision-term dep)
+        uses: actions/checkout@v4
+        with:
+          repository: lispnik/cffi-callback-closures
+          path: common-lisp/cffi-callback-closures
 
       # libvterm backs the revision-term Terminal window (loaded via CFFI, which needs libffi).
       - name: Install SBCL + libvterm
@@ -61,9 +66,10 @@ jobs:
       - name: Restore Lisp dependencies (tvision + revl)
         run: |
           (cd common-lisp/revision && ocicl install)
-          # revision-term is a sibling (not on ocicl), so ocicl won't traverse into its
-          # CFFI deps; install them explicitly into revl/systems where the build looks.
-          (cd common-lisp/revl && ocicl install cffi cffi-callback-closures)
+          # revision-term + cffi-callback-closures are siblings (not on ocicl); ocicl won't
+          # traverse into them, so install their ocicl deps explicitly into revl/systems
+          # (cffi-grovel/cffi-libffi grovel C against libffi, hence libffi-dev above).
+          (cd common-lisp/revl && ocicl install cffi cffi-libffi bordeaux-threads trivial-features)
           (cd common-lisp/revl && ocicl install)
 
       # make test = test-pty: build ./revl (on the revision framework) and
