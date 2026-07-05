@@ -32,7 +32,7 @@ live HyperSpec lookup).
 ```sh
 make            # build ./revl
 make run        # build and run
-make test       # end-to-end pty smoke suite (46 checks) through a pseudo-terminal
+make test       # headless SBCL/IDE-feature suite (36) + end-to-end pty smoke suite (46)
 make clean      # remove the binary and this project's fasl cache
 
 # or directly, without make (from this directory):
@@ -44,6 +44,22 @@ sbcl --eval '(asdf:make :revl)' --quit     # -> ./revl
 CLOS-native framework (reactive metaclass, CLOS event dispatch, named commands +
 keymaps, a layout DSL, MOP persistence, a worker→UI bridge — see
 [`../revision/revision/README.md`](../revision/revision/README.md)).
+
+## Structure
+
+revl is an **application on the revision toolkit** — revision is a reusable framework
+that knows nothing about Lisp IDEs; revl is what you build on it.  Three parts:
+
+- **`ide/`** — the IDE windows (REPL, `sldb` debugger, object inspector, git project
+  tree, browsers, editor menus, HyperSpec / docs) in revl's own **`revl`** package, on
+  top of `revision`'s public API.  They join the desktop through revision's window /
+  menu **plugin registry** (`*window-builders*` / `*extra-menus*`), so the toolkit stays
+  IDE-agnostic.
+- **`logic/`** — [`revl-logic`](revl-logic.asd), the framework-agnostic Lisp logic (sexp
+  analysis for paredit, the in-process REPL backend, git/grep, profiling, the CLHS map)
+  — no view code, testable on its own.
+- **`src/main.lisp`** — installs that logic into `revision`'s editor extension hooks and
+  launches the desktop.
 
 The demo below tours the complete IDE: the full menu bar, paredit + line numbers
 in the editor, source navigation (go-to-definition), and a live HyperSpec lookup
@@ -86,7 +102,7 @@ At a glance — the tools it ships (each detailed below):
   evaluates on its own `sb-thread` worker, so the UI never freezes: output
   streams into the transcript live as it is produced, multiple REPL windows run
   concurrently, and a long/infinite computation can be aborted with **Ctrl-C**
-  (Edit ▸ Interrupt eval).  Set `*repl-async*` to nil to force inline evaluation.
+  (Edit ▸ Interrupt eval).
 - **Tab completion** against the current package; multiple candidates pop up in a
   list, a common prefix is filled in, and `pkg:`/`pkg::` tokens are supported.
   When nothing prefix-matches it falls back to **fuzzy (flex) completion** —
@@ -501,11 +517,9 @@ button, and an **overwrite confirmation** before it replaces an existing file.
 `asdf:make` dumps a standalone executable; run `make clean` to remove the binary
 and this project's fasl cache.
 
-Jump-to-source (go-to-definition, xref, compiler notes) uses the absolute
-pathnames SBCL recorded at build time.  If you move the binary away from its
-sources, those features still find the files by searching for the trailing path
-under the executable's directory, the current directory, and
-`revl-logic::*source-root*` (set it to your source tree to override).
+Jump-to-source (go-to-definition, xref, compiler notes) uses the source pathnames
+SBCL recorded at build time (via `sb-introspect`), so those features resolve when the
+binary runs alongside the sources it was built from.
 
 The mouse works throughout: click/drag a scroll bar, double-click a list item,
 drag a title bar, drag the bottom-right corner to resize, click `[×]`/`[↑]`, and
