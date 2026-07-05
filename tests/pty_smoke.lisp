@@ -189,8 +189,16 @@
          (open-menu d #\t) (menu-item d "Git status")
          (check d "git status window opens (branch in title)" (wait-for d "Git status" :timeout 5))
 
-         ;; 15. Window ▸ Close all clears the desktop
+         ;; 15. an unsaved editor is not silently discarded: Esc prompts Save/Discard/Cancel
+         (open-menu d #\f) (key d "enter") (wait-for d "scratch")
+         (type-text d "zz") (key d "esc")
+         (check d "Esc on a modified editor prompts to save" (wait-for d "Unsaved changes"))
+         (click-text d "Discard")
+         (check d "Discard closes the modified editor" (wait-gone d "Unsaved changes" :timeout 3))
+
+         ;; 16. Window ▸ Close all clears the desktop (unsaved editors prompt -> Discard)
          (open-menu d #\w) (menu-item d "Close all")
+         (loop repeat 8 while (wait-for d "Unsaved changes" :timeout 2) do (click-text d "Discard"))
          (check d "Window > Close all removes every window"
                 (and (wait-gone d "Emoji palette" :timeout 3) (not (found? d "Lisp REPL")))))
     (quit-driver d))

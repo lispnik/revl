@@ -472,9 +472,12 @@ keys:
   / OK raises and focuses the chosen window, like the classic Turbo Vision IDE's
   Alt-0.  (The same `/`-to-filter mixin powers every modal picker — snippet
   inserter, method / trace / profiler choosers, …)
-- **Close** (Window ▸ Close) closes the active window; a modified editor first
-  prompts Save / Discard / Cancel so you don't lose unsaved changes — and for a
-  never-saved buffer, choosing Save brings up the Save As dialog.
+- **Close** (Window ▸ Close, Alt-F3, or the **[✕]** box) closes the active window; a
+  modified editor first prompts Save / Discard / Cancel so you don't lose unsaved changes
+  — and for a never-saved buffer, choosing Save brings up the Save As dialog.  **Esc**
+  dismisses *transient* windows (pickers, output, dialogs) but never silently discards an
+  editor: on a clean editor it does nothing, and on an unsaved one it raises the same
+  Save/Discard/Cancel prompt.  Close all prompts per unsaved editor.
 
 ![Window ▸ Close prompts to save; an unsaved buffer gets a Save As dialog](media/close-confirm.gif)
 
