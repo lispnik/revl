@@ -184,6 +184,12 @@
                     (null (revl-logic::git-root (uiop:temporary-directory))))))
       (ignore-errors (uiop:delete-directory-tree repo :validate (constantly t))))))
 
+;; Project manager -> git status: %PM-FOCUS-ROOT falls back to the primary root when
+;; nothing is focused, so "Git status" (g) operates on the project root.
+(let ((pw (make-instance 'project-window :dir (uiop:ensure-directory-pathname (uiop:getcwd)))))
+  (check "%pm-focus-root falls back to the primary project root"
+         (equal (namestring (%pm-focus-root pw)) (namestring (pw-dir pw)))))
+
 ;;; ===========================================================================
 (format t "~%~d passed, ~d failed~%" *pass* *fail*)
 (sb-ext:exit :code (if (zerop *fail*) 0 1))

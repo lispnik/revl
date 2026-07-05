@@ -141,9 +141,9 @@
 
 ;;; --- construction + registration --------------------------------------------
 
-(defun make-git-status (&optional (dir (uiop:getcwd)))
-  "Build a Magit-style git status window for the repository containing DIR.
-Return (values WINDOW FOCUS)."
+(defun make-git-status (&optional (dir *project-dir*))
+  "Build a Magit-style git status window for the repository containing DIR (the
+tracked project root by default).  Return (values WINDOW FOCUS)."
   (let* ((root (revl-logic::git-root dir))
          (win (make-instance 'git-status-window :root root
                              :title " Git status " :keymap *global-keys*))
@@ -157,12 +157,16 @@ Return (values WINDOW FOCUS)."
     (setf (window-scroll-target win) (find-view win 'tree) (window-help win) :git-status)
     (values win (find-view win 'tree))))
 
-(defun open-git-status (dt)
-  "Open the git status window on desktop DT, single-instance: raise + refresh an
-existing one instead of creating a second."
+(defun open-git-status (dt &optional dir)
+  "Open the git status window on desktop DT, single-instance.  With DIR, point the
+window at that directory's repository (re-targeting an existing window); without it,
+open on the default (tracked project) root, or raise the existing window as-is."
   (let ((existing (find-if (lambda (w) (typep w 'git-status-window)) (dt-windows dt))))
-    (if existing
-        (progn (dt-raise dt existing) (dt-refocus dt) (%gs-refresh existing) (invalidate dt))
-        (dt-open dt :git-status))))
+    (cond
+      (existing
+       (when dir (setf (gsw-root existing) (revl-logic::git-root dir)))
+       (dt-raise dt existing) (dt-refocus dt) (%gs-refresh existing) (invalidate dt))
+      (dir (dt-open dt (lambda () (make-git-status dir))))   ; specific dir: builder fn (not persisted)
+      (t   (dt-open dt :git-status)))))                       ; default root: keyword builder (persisted)
 
 (pushnew (cons :git-status #'make-git-status) *window-builders* :key #'car)

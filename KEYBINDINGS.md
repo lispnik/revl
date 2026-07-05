@@ -90,6 +90,7 @@ view for Back).` |
 | Key | Command |
 |-----|---------|
 | `Enter` | `Expand/collapse a directory, or open a file leaf in the editor.` |
+| `G` | `Open the git status window for the focused item's project root.` |
 
 ## Git status
 

@@ -448,6 +448,10 @@ keys:
   - **Find in files.** **F** greps the focused root (`git grep`, else
     `grep -rnI`) and lists matches in a fuzzy-filterable picker; choosing one
     jumps to that file and line.
+  - **Git status.** **`g`** (or right-click ▸ Git status) opens the Magit-style **Git
+    status** window for the project root that owns the focused item — stage / unstage /
+    diff / commit there.  With several roots, it operates on whichever root the selection
+    belongs to.
   - **Persistent & live.** Roots **and which folders are expanded** persist to
     `~/.revl_projects`; the window reopens itself on startup, single-instance
     (Alt-P focuses it).  It auto-refreshes on idle, so files created/changed
@@ -524,8 +528,11 @@ button, and an **overwrite confirmation** before it replaces an existing file.
   **Unstaged** / **Untracked** sections, each file expandable to its diff.  Keys act on the
   focused file: **`s`** stage, **`u`** unstage, **`k`** discard (with confirm), **`c`**
   commit (prompts for a message), **`g`** refresh, and **Enter** expands/collapses the diff.
-  Single-instance; re-opening raises and refreshes it.  The git porcelain lives in
-  `revl-logic` (over plain `git`), so there is no new dependency.
+  Open it for the default project root from the Tools menu, or **for any project root from
+  the Project manager** (press **`g`**, or the Git chip / right-click ▸ Git status) — it
+  operates on the root that owns the focused item.  Single-instance: re-opening re-targets,
+  raises, and refreshes it.  The git porcelain lives in `revl-logic` (over plain `git`), so
+  there is no new dependency.
 
 ![Browsing the Common Lisp HyperSpec in the THtmlView control](media/hyperspec.gif)
 

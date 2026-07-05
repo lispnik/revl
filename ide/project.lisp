@@ -197,6 +197,7 @@ chosen match at its line."
          (cons "Delete"  (lambda () (%pm-delete-file win)))
          (cons "Reveal"  (lambda () (%pm-reveal win)))
          (cons "+Root"   (lambda () (%pm-add-root win)))
+         (cons "Git"     (lambda () (%pm-git-status win)))
          (cons "Refresh" (lambda () (%pm-rebuild win))))))
 
 ;;; --- file operations --------------------------------------------------------
@@ -277,6 +278,25 @@ so MAKE-PATHNAME won't inherit a type from anything it is merged against."
           (when q (setf (input-text q) name (input-caret q) (length name)) (input-notify q))
           (%pm-echo win (format nil " revealing ~a " name))))))
 
+;;; --- git status for a project root ------------------------------------------
+
+(defun %pm-focus-root (win)
+  "The project root (from PW-DIRS) that owns the focused item, else the primary root.
+So the git status window operates on whichever root the selection belongs to."
+  (let ((sel (%pm-selected-file win)))
+    (or (and sel (find-if (lambda (d) (uiop:subpathp sel d)) (pw-dirs win)))
+        (pw-dir win))))
+
+(defun %pm-git-status (win)
+  "Open the git status window for the project root that owns the focused item."
+  (if *desktop*
+      (funcall 'open-git-status *desktop* (%pm-focus-root win))   ; open-git-status: git-status.lisp
+      (%pm-echo win " git status needs the desktop ")))
+
+(define-command proj-git-status (v e)
+  "Open the git status window for the focused item's project root."
+  (%pm-git-status (view-root v)))
+
 (defmethod context-menu ((v outline))   ; right-click menu on the project tree
   (let ((w (view-root v)))
     (when (typep w 'project-window)
@@ -284,10 +304,12 @@ so MAKE-PATHNAME won't inherit a type from anything it is merged against."
             (cons "Rename…"  (lambda () (%pm-rename-file w)))
             (cons "Delete…"  (lambda () (%pm-delete-file w)))
             (cons "New file…" (lambda () (%pm-new-file w)))
+            (cons "Git status" (lambda () (%pm-git-status w)))
             (cons "Refresh"  (lambda () (%pm-rebuild w)))))))
 
 (defkeymap *proj-keys* (*outline-keys*)
-  (:enter proj-open))                    ; override Enter; arrows/Right/Left inherit from *outline-keys*
+  (:enter proj-open)                     ; override Enter; arrows/Right/Left inherit from *outline-keys*
+  (#\g    proj-git-status))              ; g: open git status for the focused root
 
 ;;; *project-dir* (the default root for file dialogs) is a toolkit var now —
 ;;; revision's dialogs.lisp; the Change-dir command still sets it.
@@ -312,7 +334,7 @@ so MAKE-PATHNAME won't inherit a type from anything it is merged against."
                      (:fill (outline :name 'tree :keymap *proj-keys*))
                      (1 (static-text :name 'echo :role :status :text " Enter on a file: open · [M]/[A] = git modified/added "))
                      (1 (static-text :role :status
-                          :text " filter · Open / Find / New / Rename / Delete / Refresh chips · Esc: close "))))))
+                          :text " filter · g: git status · Open / Find / New / Rename / Delete chips · Esc: close "))))))
     (add-subview win body)
     (%pm-rebuild win)
     (setf (window-scroll-target win) (find-view win 'tree) (window-help win) :project)
