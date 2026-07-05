@@ -311,6 +311,12 @@ keys:
 
 ![Lisp auto-indent and Alt-Q reflow in an editor window](media/auto-indent.gif)
 
+  Typing a `loop` clause by clause (no leading spaces) shows the `cl-indent` `loop`
+  rule live: `for` / `when` / `else` / `finally` clauses align under the first clause,
+  and a `when` / `else` clause body (the `collect …`) indents two columns further.
+
+  ![LOOP auto-indent: for/when/else/finally clauses align under the first clause; when and else clause bodies indent two columns further](media/loop-indent.gif)
+
 ![Lisp syntax highlighting in an editor window](media/syntax-highlight.gif)
 - **Eval from an editor** — Lisp ▸ Eval defun (the top-level form at the cursor)
   and Eval region (the selection) submit into a REPL.
