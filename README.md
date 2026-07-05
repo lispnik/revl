@@ -517,6 +517,8 @@ button, and an **overwrite confirmation** before it replaces an existing file.
   **libvterm**, and renders the live screen into a revision view — full 24-bit colour,
   text styles, wide CJK/emoji.  **Ctrl-\\** closes it; **Shift-PgUp/PgDn** scrolls the
   scrollback.
+
+  ![The Terminal window: a live shell inside revl running ls, a coloured git log, and uname / sbcl --version](media/terminal.gif)
 - **Git status** (Tools ▸ Git status) — a Magit-style, keyboard-driven view of the working
   tree: the current branch in the title and the changes grouped into **Staged** /
   **Unstaged** / **Untracked** sections, each file expandable to its diff.  Keys act on the
