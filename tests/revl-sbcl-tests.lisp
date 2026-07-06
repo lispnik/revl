@@ -167,6 +167,36 @@
              (check "git-file-diff shows an added line"
                     (some (lambda (l) (and (plusp (length l)) (char= (char l 0) #\+)))
                           (revl-logic::git-file-diff root "a.txt")))
+             ;; the git-status WINDOW: sections load async, and expanding a file fetches
+             ;; its diff off the UI thread via revision:async-children (placeholder now,
+             ;; diff later).  No event loop here, so we marshal :then via the UI queue.
+             (let ((revision:*ui-thread* :other) (revision::*ui-queue* nil))
+               (flet ((settle (pred &optional (n 300))
+                        (loop repeat n until (funcall pred)
+                              do (revision::drain-ui-callbacks) (sleep 0.01))
+                        (funcall pred)))
+                 (let* ((win (make-git-status (namestring repo)))
+                        (ol  (find-view win 'tree)))
+                   (check "git-status window populates its sections asynchronously"
+                          (settle (lambda () (outline-roots ol))))
+                   (let* ((unstaged (find-if (lambda (r) (search "Unstaged" (outline-node-text r)))
+                                             (outline-roots ol)))
+                          (file (and unstaged
+                                     (find-if (lambda (c) (search "a.txt" (outline-node-text c)))
+                                              (outline-node-children unstaged)))))
+                     (check "a file node appears under Unstaged" file)
+                     (when file
+                       (setf (outline-node-expanded file) t)
+                       (outline-ensure-children file)     ; fires the async loader
+                       (check "expanding shows a loading placeholder immediately"
+                              (some (lambda (c) (search "loading" (outline-node-text c)))
+                                    (outline-node-children file)))
+                       (check "the diff loads asynchronously, replacing the placeholder"
+                              (settle (lambda ()
+                                        (and (notany (lambda (c) (search "loading" (outline-node-text c)))
+                                                     (outline-node-children file))
+                                             (some (lambda (c) (find #\+ (outline-node-text c)))
+                                                   (outline-node-children file)))))))))))
              (check "git-stage succeeds" (revl-logic::git-stage root "a.txt"))
              (check "a.txt moves to staged"
                     (member "a.txt" (revl-logic::git-status-sections root) :key #'car :test #'string=))

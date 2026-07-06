@@ -23,7 +23,8 @@
     (case (char line 0) (#\+ 10) (#\- 12) (#\@ 11) (t nil))))
 
 (defun %gs-diff-nodes (win relpath section data)
-  "Lazy children of a file node: one outline node per diff line, coloured."
+  "The diff children of a file node: one outline node per diff line, coloured.  Runs the
+blocking `git diff` -- invoked on a worker thread via ASYNC-CHILDREN, not the UI thread."
   (let ((lines (revl-logic::git-file-diff (gsw-root win) relpath
                                           :staged (eq section :staged)
                                           :untracked (eq section :untracked))))
@@ -36,12 +37,17 @@
                 lines))))
 
 (defun %gs-file-node (win relpath section status)
-  "A file row (DATA = (RELPATH SECTION STATUS)) that expands to its diff."
+  "A file row (DATA = (RELPATH SECTION STATUS)) that expands to its diff.  Expanding it
+fetches the diff off the UI thread (ASYNC-CHILDREN), showing 'loading…' until it lands,
+so a large diff never stalls the desktop."
   (let* ((data (list relpath section status))
          (node (revision:make-outline-node
                 (format nil "  ~a~a" relpath (%gs-badge status)) nil data)))
     (setf (revision:outline-node-loader node)
-          (lambda () (%gs-diff-nodes win relpath section data)))
+          (lambda ()
+            (revision:async-children node (find-view win 'tree)
+                                     (lambda () (%gs-diff-nodes win relpath section data))
+                                     :placeholder "  loading…")))
     node))
 
 (defun %gs-section (win title entries section)
