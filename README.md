@@ -27,6 +27,10 @@ live HyperSpec lookup).
   sibling, `./systems/revision-term`) backs the **Terminal** window (Tools ▸ Terminal).
   It is the one component with third-party requirements — **CFFI**,
   `cffi-callback-closures`, and the **libvterm** C library (e.g. `brew install libvterm`).
+- The **[revision-manpage](https://github.com/lispnik/revision-manpage)** widget (a
+  sibling checkout) backs the **Man page** window (Tools ▸ Man page…).  It shells out to
+  **`mandoc`** (ships with macOS/BSD; `apt install mandoc` on Linux) to convert a manual
+  page to HTML and renders it with revision's HTML view; no Lisp dependencies.
 - **Otherwise, no external Lisp dependencies** — the rest of the IDE builds and runs on
   SBCL + revision alone.  revl's framework-agnostic Lisp logic lives in a shared
   `revl-logic` system, and the binary is dumped from the `revl` system.
@@ -526,6 +530,11 @@ button, and an **overwrite confirmation** before it replaces an existing file.
   scrollback.
 
   ![The Terminal window: a live shell inside revl running ls, a coloured git log, and uname / sbcl --version](media/terminal.gif)
+- **Man page** (Tools ▸ Man page…) — a manual-page viewer, backed by the reusable
+  **[revision-manpage](https://github.com/lispnik/revision-manpage)** widget: it shells out
+  to **`mandoc -T html`** to convert a page and renders it with the HTML view.  Prompts for
+  a page (`grep`, `printf 3`, or the `man`-style `3 printf`); **SEE ALSO** cross-references
+  are clickable and reload the referenced page in place, and section anchors scroll.
 - **Git status** (Tools ▸ Git status) — a Magit-style, keyboard-driven view of the working
   tree: the current branch in the title and the changes grouped into **Staged** /
   **Unstaged** / **Untracked** sections, each file expandable to its diff.  Keys act on the

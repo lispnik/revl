@@ -189,6 +189,16 @@
          (open-menu d #\t) (menu-item d "Git status")
          (check d "git status window opens (branch in title)" (wait-for d "Git status" :timeout 5))
 
+         ;; 14b. the Man page viewer (revision-manpage: mandoc -> HTML) is wired into
+         ;; Tools: the item prompts for a page and opens the viewer window.  (The
+         ;; conversion + rendering itself is covered by revision-manpage's own suite;
+         ;; the window title is set before the async load, so this holds regardless of
+         ;; which man pages the runner happens to have.)
+         (open-menu d #\t) (menu-item d "Man page")
+         (check d "Man page prompt opens" (wait-for d "Name:" :timeout 4))
+         (type-text d "mandoc") (key d "enter")
+         (check d "Man page viewer window opens" (wait-for d "man mandoc" :timeout 6))
+
          ;; 15. an unsaved editor is not silently discarded: Esc prompts Save/Discard/Cancel
          (open-menu d #\f) (key d "enter") (wait-for d "scratch")
          (type-text d "zz") (key d "esc")

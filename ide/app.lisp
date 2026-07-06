@@ -86,6 +86,11 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
 ;; real shell/child process on a pty, emulated and rendered into a revision view.
 (pushnew (cons :terminal (lambda () (revision-term:make-terminal))) *window-builders* :key #'car)
 
+;; The Man page viewer is the reusable revision-manpage widget (mandoc -> HTML).  It
+;; self-registers its :man-page builder; we place its menu item ourselves (below,
+;; next to Terminal), so suppress its own auto-added Tools item to avoid a duplicate.
+(setf revision-manpage:*auto-menu* nil)
+
 (push (lambda (dt)
         (list "Tools"
               (list "Lisp REPL"       (lambda () (dt-open dt :repl))
@@ -96,6 +101,7 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
               (list "Thread monitor"  (lambda () (dt-open dt :threads)))
               (list "Git status"      (lambda () (open-git-status dt)))
               (list "Terminal"        (lambda () (dt-open dt :terminal)))
+              (list "Man page…"       (lambda () (revision-manpage:prompt-man-page dt)))
               (list "HTML browser"    (lambda () (dt-open dt :html)))
               (list "Package table"   (lambda () (dt-open dt :ptable)))
               (list "Emoji palette"   (lambda () (dt-open dt :emoji)))))

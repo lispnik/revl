@@ -12,7 +12,7 @@
   :author "Matthew Kennedy"
   :license "MIT"
   :version "0.1.0"
-  :depends-on ("revision" "revl-logic" "revision-term")   ; revision-term: the libvterm-backed Terminal window
+  :depends-on ("revision" "revl-logic" "revision-term" "revision-manpage")   ; revision-term: the libvterm-backed Terminal window; revision-manpage: the man-page viewer
   :serial t
   :build-operation "program-op"
   :build-pathname "revl"

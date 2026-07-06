@@ -30,6 +30,11 @@ jobs:
         with:
           repository: lispnik/revision-term
           path: common-lisp/revision-term
+      - name: Checkout revision-manpage (Man page viewer)
+        uses: actions/checkout@v4
+        with:
+          repository: lispnik/revision-manpage
+          path: common-lisp/revision-manpage
       - name: Checkout cffi-callback-closures (revision-term dep)
         uses: actions/checkout@v4
         with:
@@ -38,7 +43,7 @@ jobs:
 
       # libvterm backs the revision-term Terminal window (loaded via CFFI, which needs libffi).
       - name: Install SBCL + libvterm
-        run: sudo apt-get update && sudo apt-get install -y sbcl make git python3 libvterm-dev libffi-dev
+        run: sudo apt-get update && sudo apt-get install -y sbcl make git python3 libvterm-dev libffi-dev mandoc man-db
 
       # Warm path: exact csv match reuses deps; otherwise restore-keys pulls the
       # most recent cache and `ocicl install` fetches only the delta (also
