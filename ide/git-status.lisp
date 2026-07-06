@@ -68,17 +68,26 @@
 (defun %gs-echo (win msg)
   (let ((e (find-view win 'echo))) (when e (setf (static-text-text e) msg) (invalidate e))))
 
-(defun %gs-refresh (win)
-  "Recompute the sections from git and rebuild the outline, and update the title."
+(defun %gs-apply (win branch roots)
+  "Install freshly-computed sections + branch into WIN's outline and title (UI thread)."
   (let ((ol (find-view win 'tree)))
     (when ol
-      (setf (outline-roots ol) (%gs-build-roots win)
-            (outline-focused ol) 0 (outline-top ol) 0)
-      (invalidate ol))
-    (setf (window-title win)
-          (if (gsw-root win)
-              (format nil " Git status — ~a " (or (revl-logic::git-current-branch (gsw-root win)) "?"))
-              " Git status "))))
+      (setf (outline-roots ol) roots (outline-focused ol) 0 (outline-top ol) 0)
+      (invalidate ol)))
+  (setf (window-title win)
+        (if (gsw-root win) (format nil " Git status — ~a " (or branch "?")) " Git status ")))
+
+(defun %gs-refresh (win)
+  "Re-read git state and rebuild the outline.  The git subprocess (status + branch, and
+building each file node) runs on a worker thread so a slow/large repo doesn't stall the
+UI; the rebuilt sections are installed back on the UI thread via RUN-ASYNC's THEN."
+  (let ((root (gsw-root win)))
+    (%gs-echo win " loading… ")
+    (revision:run-async
+     (lambda () (cons (and root (revl-logic::git-current-branch root)) (%gs-build-roots win)))
+     :then (lambda (result) (%gs-apply win (car result) (cdr result)) (%gs-echo win ""))
+     :on-error (lambda (e) (%gs-echo win (format nil " git error: ~a " e)))
+     :label "git-status")))
 
 (defun %gs-current (win)
   "The (RELPATH SECTION STATUS) of the focused file/diff node, or NIL."
@@ -86,18 +95,26 @@
     (and n (revision:outline-node-data n))))
 
 (defun %gs-act (win action)
-  "Run stage / unstage / discard on the focused file, then refresh."
+  "Run stage / unstage / discard on the focused file off the UI thread, then refresh.
+The discard confirmation (a modal) is taken on the UI thread first; only the git
+subprocess is backgrounded."
   (let ((root (gsw-root win)) (data (%gs-current win)))
     (if (and root data (consp data))
         (destructuring-bind (relpath section status) data
           (declare (ignore status))
-          (let ((ok (ecase action
-                      (:stage   (revl-logic::git-stage root relpath))
-                      (:unstage (revl-logic::git-unstage root relpath))
-                      (:discard (when (revision::%confirm (format nil " Discard changes to ~a? " relpath))
-                                  (revl-logic::git-discard root relpath :untracked (eq section :untracked)))))))
-            (%gs-refresh win)
-            (%gs-echo win (if ok (format nil " ~(~a~) ~a " action relpath) " (nothing to do) "))))
+          (when (or (not (eq action :discard))
+                    (revision::%confirm (format nil " Discard changes to ~a? " relpath)))
+            (%gs-echo win (format nil " ~(~a~)… " action))
+            (revision:run-async
+             (lambda () (ecase action
+                          (:stage   (revl-logic::git-stage root relpath))
+                          (:unstage (revl-logic::git-unstage root relpath))
+                          (:discard (revl-logic::git-discard root relpath :untracked (eq section :untracked)))))
+             :then (lambda (ok)
+                     (%gs-refresh win)
+                     (%gs-echo win (if ok (format nil " ~(~a~) ~a " action relpath) " (nothing to do) ")))
+             :on-error (lambda (e) (%gs-echo win (format nil " git error: ~a " e)))
+             :label "git-action")))
         (%gs-echo win " focus a file first "))))
 
 ;;; --- commands + keymap ------------------------------------------------------
@@ -116,9 +133,12 @@
           (%gs-echo win " nothing staged to commit ")
           (let ((msg (prompt-string " Commit " "Message:")))
             (when (and msg (plusp (length (string-trim " " msg))))
-              (if (revl-logic::git-commit root msg)
-                  (progn (%gs-refresh win) (%gs-echo win " committed "))
-                  (%gs-echo win " commit failed "))))))))
+              (%gs-echo win " committing… ")
+              (revision:run-async
+               (lambda () (revl-logic::git-commit root msg))
+               :then (lambda (ok) (%gs-refresh win) (%gs-echo win (if ok " committed " " commit failed ")))
+               :on-error (lambda (e) (%gs-echo win (format nil " commit failed: ~a " e)))
+               :label "git-commit")))))))
 
 (define-command gs-toggle (v e)
   "Expand/collapse the focused file's diff (or a section)."
