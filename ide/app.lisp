@@ -35,13 +35,13 @@ NIL when the user quits."
                          (1 (static-text :role :status
                               :text " every window runs on the revision kernel; close it (q/Esc) to return here ")))))))
         (layout win (rect 0 0 (revision:screen-width s) (revision:screen-height s)))
-        (setf *root* win
+        (setf (context-root *context*) win
               (container-focus win) (find-view win 'menu)
-              *ui-thread* sb-thread:*current-thread* *running* t *dirty* t)
+              *ui-thread* sb-thread:*current-thread* *running* t (context-dirty *context*) t)
         (loop while *running* do
-          (when *dirty*
+          (when (context-dirty *context*)
             (revision:hide-cursor s)
-            (draw win) (revision:flush-screen s) (setf *dirty* nil))
+            (draw win) (revision:flush-screen s) (setf (context-dirty *context*) nil))
           (revision::pump-input s 0.05)
           (let ((tev (revision::screen-next-event s)))
             (when tev (let ((ev (translate tev))) (when ev (handle-event win ev))))))))

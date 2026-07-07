@@ -103,7 +103,7 @@ not terminate it.  Refuses the UI thread."
 
 (defun make-threadmon ()
   "Build a thread-monitor window.  Return (values WINDOW FOCUS OPEN); OPEN starts
-the background refresher (keyed off the window, not *root*, so it works hosted)
+the background refresher (keyed off the window, not the context root, so it works hosted)
 and returns a cleanup thunk that stops it when the window closes."
   (let ((win (ui (window (:title " Thread monitor "
                           :keymap *global-keys*)
