@@ -31,6 +31,9 @@ live HyperSpec lookup).
   sibling checkout) backs the **Man page** window (Tools ▸ Man page…).  It shells out to
   **`mandoc`** (ships with macOS/BSD; `apt install mandoc` on Linux) to convert a manual
   page to HTML and renders it with revision's HTML view; no Lisp dependencies.
+- The **[revision-hexdump](https://github.com/lispnik/revision-hexdump)** widget (a
+  sibling checkout) backs the **Hex editor** window (Tools ▸ Hex editor…): an editable
+  offset·hex·ASCII view of any file; no external dependencies.
 - **Otherwise, no external Lisp dependencies** — the rest of the IDE builds and runs on
   SBCL + revision alone.  revl's framework-agnostic Lisp logic lives in a shared
   `revl-logic` system, and the binary is dumped from the `revl` system.
@@ -535,6 +538,10 @@ button, and an **overwrite confirmation** before it replaces an existing file.
   to **`mandoc -T html`** to convert a page and renders it with the HTML view.  Prompts for
   a page (`grep`, `printf 3`, or the `man`-style `3 printf`); **SEE ALSO** cross-references
   are clickable and reload the referenced page in place, and section anchors scroll.
+- **Hex editor** (Tools ▸ Hex editor…) — an editable hex view of any file, backed by the
+  reusable **[revision-hexdump](https://github.com/lispnik/revision-hexdump)** widget: the
+  classic offset·hex·ASCII columns, edited **in place** (Tab switches the hex/ASCII pane,
+  hex digits or printable keys overwrite the byte, Ctrl-S saves — the file keeps its size).
 - **Git status** (Tools ▸ Git status) — a Magit-style, keyboard-driven view of the working
   tree: the current branch in the title and the changes grouped into **Staged** /
   **Unstaged** / **Untracked** sections, each file expandable to its diff.  Keys act on the

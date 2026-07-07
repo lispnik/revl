@@ -91,6 +91,11 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
 ;; next to Terminal), so suppress its own auto-added Tools item to avoid a duplicate.
 (setf revision-manpage:*auto-menu* nil)
 
+;; The Hex editor is the reusable revision-hexdump widget (editable offset·hex·ASCII).
+;; Same story: it self-registers its :hexdump builder; we place the menu item below,
+;; so suppress its own auto-added Tools item.
+(setf revision-hexdump:*auto-menu* nil)
+
 (register-menu :tools
       (lambda (dt)
         (list "Tools"
@@ -103,6 +108,7 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
               (list "Git status"      (lambda () (open-git-status dt)))
               (list "Terminal"        (lambda () (dt-open dt :terminal)))
               (list "Man page…"       (lambda () (revision-manpage:prompt-man-page dt)))
+              (list "Hex editor…"     (lambda () (revision-hexdump:prompt-hexdump dt)))
               (list "HTML browser"    (lambda () (dt-open dt :html)))
               (list "Package table"   (lambda () (dt-open dt :ptable)))
               (list "Emoji palette"   (lambda () (dt-open dt :emoji))))))

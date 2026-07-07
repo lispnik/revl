@@ -35,6 +35,11 @@ jobs:
         with:
           repository: lispnik/revision-manpage
           path: common-lisp/revision-manpage
+      - name: Checkout revision-hexdump (Hex editor)
+        uses: actions/checkout@v4
+        with:
+          repository: lispnik/revision-hexdump
+          path: common-lisp/revision-hexdump
       - name: Checkout cffi-callback-closures (revision-term dep)
         uses: actions/checkout@v4
         with:

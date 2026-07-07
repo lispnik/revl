@@ -199,6 +199,15 @@
          (type-text d "mandoc") (key d "enter")
          (check d "Man page viewer window opens" (wait-for d "man mandoc" :timeout 6))
 
+         ;; 14c. the Hex editor (revision-hexdump: editable offset·hex·ASCII) is wired
+         ;; into Tools: the item opens a file picker that opens the chosen file in a hex
+         ;; window.  (Editing + rendering are covered by revision-hexdump's own suite;
+         ;; here we confirm the menu wiring reaches the picker and cancels cleanly.)
+         (open-menu d #\t) (menu-item d "Hex editor")
+         (check d "Hex editor file picker opens" (wait-for d "Open file (hex)" :timeout 4))
+         (key d "esc")
+         (check d "Hex editor picker cancels" (wait-gone d "Open file (hex)" :timeout 3))
+
          ;; 15. an unsaved editor is not silently discarded: Esc prompts Save/Discard/Cancel
          (open-menu d #\f) (key d "enter") (wait-for d "scratch")
          (type-text d "zz") (key d "esc")
