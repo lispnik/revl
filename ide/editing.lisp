@@ -188,7 +188,8 @@ count.  Undoable; keeps the cursor near its original offset."
 
 ;;; --- an Edit menu -----------------------------------------------------------
 
-(push (lambda (dt)
+(register-menu :edit
+      (lambda (dt)
         (flet ((cur () (%focused-editor))
                (pe (op) (lambda () (%editor-paredit (%focused-editor) op))))
           (list "Edit"
@@ -227,5 +228,4 @@ count.  Undoable; keeps the cursor near its original offset."
                                                                (invalidate te)))))
                 (list "Line numbers"        (lambda () (let ((te (cur)))
                                                          (when te (setf (te-line-numbers te) (not (te-line-numbers te)))
-                                                               (te-ensure-visible te) (invalidate te))))))))
-      *extra-menus*)
+                                                               (te-ensure-visible te) (invalidate te)))))))))

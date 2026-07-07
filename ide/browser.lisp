@@ -79,5 +79,5 @@ WINDOW FOCUS)."
 (defun run-systems  () (multiple-value-bind (w f) (make-systems)  (run-view w :focus f)))
 
 ;;; register with the desktop (Tools menu / layout-restore)
-(pushnew (cons :packages #'make-packages) *window-builders* :key #'car)
-(pushnew (cons :systems  #'make-systems)  *window-builders* :key #'car)
+(register-window :packages #'make-packages)
+(register-window :systems  #'make-systems)

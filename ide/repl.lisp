@@ -371,4 +371,4 @@ stops the per-listener worker thread when the window closes."
   (multiple-value-bind (w f o) (make-repl package) (run-view w :focus f :open o)))
 
 ;;; register with the desktop (Tools menu opens it; layout-restore rebuilds it)
-(pushnew (cons :repl #'make-repl) *window-builders* :key #'car)
+(register-window :repl #'make-repl)

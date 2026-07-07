@@ -329,10 +329,8 @@ for the \"Alt-I: inspect the focused item\" affordance across the object browser
 
 ;;; --- register with the desktop: builders + an Inspect menu ------------------
 
-(setf *window-builders*
-      (append *window-builders*
-              (list (cons :classes   #'make-class-browser)
-                    (cons :functions #'make-function-browser))))
+(register-window :classes   #'make-class-browser)
+(register-window :functions #'make-function-browser)
 
 ;;; The introspection commands are surfaced in the consolidated Browse menu
 ;;; (built in docs.lisp, which loads after this file and nav.lisp).

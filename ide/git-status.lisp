@@ -195,4 +195,4 @@ open on the default (tracked project) root, or raise the existing window as-is."
       (dir (dt-open dt (lambda () (make-git-status dir))))   ; specific dir: builder fn (not persisted)
       (t   (dt-open dt :git-status)))))                       ; default root: keyword builder (persisted)
 
-(pushnew (cons :git-status #'make-git-status) *window-builders* :key #'car)
+(register-window :git-status #'make-git-status)

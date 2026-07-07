@@ -57,7 +57,8 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
 ;;; window).  The IDE contributes File and Tools, and adds its own Options + Help items
 ;;; (which %ORDER-MENUS merges into the shell's), by pushing to *EXTRA-MENUS*.
 
-(push (lambda (dt)
+(register-menu :file
+      (lambda (dt)
         (flet ((any-win () (lambda () (dt-top dt))))
           (list "File"
                 (list "New"            (lambda () (dt-open dt :editor)) (ctrl #\n))
@@ -79,19 +80,19 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
                 (list "Restore layout" (lambda () (mapc (lambda (w) (dt-close-window dt w)) (copy-list (dt-windows dt)))
                                          (dt-load-layout dt)) nil (lambda () t))
                 :--
-                (list "Exit"           (lambda () (setf *app-done* t)) (cons #\x revision::+md-alt+)))))
-      *extra-menus*)
+                (list "Exit"           (lambda () (setf *app-done* t)) (cons #\x revision::+md-alt+))))))
 
 ;; The Terminal window is the reusable revision-term widget (libvterm-backed): a
 ;; real shell/child process on a pty, emulated and rendered into a revision view.
-(pushnew (cons :terminal (lambda () (revision-term:make-terminal))) *window-builders* :key #'car)
+(register-window :terminal (lambda () (revision-term:make-terminal)))
 
 ;; The Man page viewer is the reusable revision-manpage widget (mandoc -> HTML).  It
 ;; self-registers its :man-page builder; we place its menu item ourselves (below,
 ;; next to Terminal), so suppress its own auto-added Tools item to avoid a duplicate.
 (setf revision-manpage:*auto-menu* nil)
 
-(push (lambda (dt)
+(register-menu :tools
+      (lambda (dt)
         (list "Tools"
               (list "Lisp REPL"       (lambda () (dt-open dt :repl))
                     (cons :f2 revision::+md-alt+))                            ; Alt-F2 = new REPL
@@ -104,17 +105,17 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
               (list "Man page…"       (lambda () (revision-manpage:prompt-man-page dt)))
               (list "HTML browser"    (lambda () (dt-open dt :html)))
               (list "Package table"   (lambda () (dt-open dt :ptable)))
-              (list "Emoji palette"   (lambda () (dt-open dt :emoji)))))
-      *extra-menus*)
+              (list "Emoji palette"   (lambda () (dt-open dt :emoji))))))
 
-(push (lambda (dt)
+(register-menu :options-eval
+      (lambda (dt)
         (declare (ignore dt))
         (list "Options"
               (list "Eval timing"     (lambda () (setf *repl-time* (not *repl-time*))
-                                        (revision::%tool-note (if *repl-time* "eval timing ON" "eval timing OFF"))))))
-      *extra-menus*)
+                                        (revision::%tool-note (if *repl-time* "eval timing ON" "eval timing OFF")))))))
 
-(push (lambda (dt)
+(register-menu :help
+      (lambda (dt)
         (list "Help"
               (list "Contents"        (lambda () (dt-open dt (lambda () (make-help :general)))))
               (list "Keybindings"     (lambda () (dt-open dt (lambda () (make-help :keys)))))
@@ -126,8 +127,7 @@ shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
                     (list "HTML browser"    (lambda () (dt-open dt (lambda () (make-help :html)))))
                     (list "Thread monitor"  (lambda () (dt-open dt (lambda () (make-help :threads))))))
               :--
-              (list "About…"          (lambda () (revision::%about-dialog)))))
-      *extra-menus*)
+              (list "About…"          (lambda () (revision::%about-dialog))))))
 
 ;;; contribute the IDE's keymaps to the (toolkit-owned) keybinding reference, so the
 ;;; generated KEYBINDINGS.md documents the Inspector / Project / REPL / Call-tree keys.

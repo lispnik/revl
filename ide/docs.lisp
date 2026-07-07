@@ -79,7 +79,8 @@
 ;;; Browse submenus.  docs.lisp loads last, so every do-* command it references
 ;;; (from compile, nav, tools, inspect and here) is already defined.  This
 ;;; replaces the former separate Run / Search / Debug / Browse top-level menus.
-(push (lambda (dt)
+(register-menu :browse
+      (lambda (dt)
         (list "Lisp"
               (list "Eval / compile defun" (lambda () (do-eval-defun)))         ; compile.lisp
               (list "Load buffer"          (lambda () (do-load-buffer)))
@@ -146,5 +147,4 @@
               (list "Object *" :submenu                                          ; inspect.lisp
                     (list "Clip last value"  (lambda () (do-clip-last-value)))
                     (list "Inspect *"        (lambda () (do-inspect-clipped)))
-                    (list "Insert * as text" (lambda () (do-insert-clipped))))))
-      *extra-menus*)
+                    (list "Insert * as text" (lambda () (do-insert-clipped)))))))

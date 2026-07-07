@@ -394,4 +394,4 @@ descends), reopening the folders that were open when the layout was saved."
   (multiple-value-bind (w f) (make-project dir) (run-view w :focus f)))
 
 ;;; register with the desktop (Tools menu / layout-restore)
-(pushnew (cons :project (lambda () (make-project))) *window-builders* :key #'car)
+(register-window :project (lambda () (make-project)))

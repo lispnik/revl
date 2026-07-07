@@ -49,4 +49,4 @@
     (values win (find-view win 'tbl))))
 
 ;;; register the package-table window with the desktop (Tools menu / layout restore)
-(pushnew (cons :ptable #'make-package-table) *window-builders* :key #'car)
+(register-window :ptable #'make-package-table)

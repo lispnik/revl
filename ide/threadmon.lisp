@@ -137,4 +137,4 @@ and returns a cleanup thunk that stops it when the window closes."
   (multiple-value-bind (w f o) (make-threadmon) (run-view w :focus f :open o)))
 
 ;;; register with the desktop (Tools menu / layout-restore)
-(pushnew (cons :threads #'make-threadmon) *window-builders* :key #'car)
+(register-window :threads #'make-threadmon)
