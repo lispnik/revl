@@ -47,9 +47,30 @@ NIL when the user quits."
             (when tev (let ((ev (translate tev))) (when ev (handle-event win ev))))))))
     (cdr choice)))
 
+;;; --- user config: ~/.config/revl/{early-init,init}.lisp --------------------
+;;; Two optional startup files, loaded (in the REVL package) by the desktop's
+;;; layout-restore hooks: early-init.lisp runs *before* the previous session's
+;;; windows are restored, init.lisp *after* (so it may inspect / add to them).
+;;; A missing file is skipped; an error in one is logged (REVISION-LOG), not fatal.
+
+(defun %revl-config-file (name)
+  "The path ~/.config/revl/NAME."
+  (merge-pathnames (concatenate 'string ".config/revl/" name) (user-homedir-pathname)))
+
+(defun %load-revl-config (name)
+  "Load ~/.config/revl/NAME in the REVL package, if it exists; errors are logged, not fatal."
+  (let ((file (%revl-config-file name)))
+    (when (probe-file file)
+      (ignoring-errors ("revl user config")
+        (let ((*package* (find-package '#:revl)))
+          (load file))))))
+
 (defun run-app ()
-  "Run the revision-based revl IDE.  This is now the full Turbo-Vision-style desktop
-shell (menu bar + status bar + hosted windows); see RUN-DESKTOP."
+  "Run the revision-based revl IDE (the full Turbo-Vision-style desktop shell: menu bar +
+status bar + hosted windows; see RUN-DESKTOP).  Loads the user config from ~/.config/revl/ --
+early-init.lisp before the saved layout is restored, init.lisp after."
+  (setf *before-layout-restore* (lambda () (%load-revl-config "early-init.lisp"))
+        *after-layout-restore*  (lambda () (%load-revl-config "init.lisp")))
   (run-desktop))
 
 ;;; --- the IDE's desktop menus -----------------------------------------------

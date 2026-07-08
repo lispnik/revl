@@ -570,6 +570,27 @@ button, and an **overwrite confirmation** before it replaces an existing file.
 
 ![The Browser history window — jump straight to any visited page](media/browser-history-window.gif)
 
+## Configuration
+
+revl loads two optional user config files from `~/.config/revl/` at startup (Emacs-style):
+
+| File | When it loads |
+|------|---------------|
+| `early-init.lisp` | **before** the previous session's windows are restored |
+| `init.lisp` | **after** the layout is restored (so it can inspect / add to the restored windows) |
+
+Both are ordinary Lisp files, loaded in the `revl` package with the desktop already
+built and bound to `revision:*desktop*`. A missing file is skipped; an error in one is
+logged (`revision-log`) and does **not** abort startup. For example, `~/.config/revl/init.lisp`:
+
+```lisp
+;; open a scratch buffer and a hex view of a file every session
+(dt-open *desktop* :editor)
+(open-hexdump *desktop* "/etc/hosts")
+```
+
+(The hex editor also reads its own `~/.revision-hexdump.templates` for custom binary formats.)
+
 ## Notes
 
 `asdf:make` dumps a standalone executable; run `make clean` to remove the binary
