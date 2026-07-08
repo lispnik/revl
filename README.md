@@ -607,7 +607,10 @@ For example, `~/.config/revl/init.lisp`:
          revision-hexdump:*templates* :key #'first :test #'string=)
 ```
 
-(The hex editor also reads its own `~/.config/revision-hexdump/templates.lisp` for custom binary formats.)
+A ready-to-copy sample is in [`examples/init.lisp`](examples/init.lisp) — copy it to
+`~/.config/revl/init.lisp`.  (The hex editor also reads its own
+`~/.config/revision-hexdump/templates.lisp` for custom binary formats; a sample for that
+lives in the revision-hexdump repo.)
 
 ## Notes
 
