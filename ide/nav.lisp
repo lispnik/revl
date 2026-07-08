@@ -86,6 +86,29 @@ show a picker.  Shared by Go-to-definition and the symbol browsers' Goto key."
     (when (and name (plusp (length (string-trim " " name))))
       (%goto-symbol (%read-in-active name) name))))
 
+;;; --- CL:ED -> open in a revl editor -----------------------------------------
+;;; Installed into SB-EXT:*ED-FUNCTIONS* (see INSTALL-REVL-LOGIC) so evaluating
+;;; (ed …) from a REPL opens in revl instead of erroring.  ED runs on the REPL's
+;;; worker thread, so the actual window work is marshalled to the UI thread.
+
+(defun revl-ed (&optional x)
+  "revl's CL:ED handler: (ed) opens a scratch editor; (ed \"file\") / (ed #p\"…\") opens
+that file (reusing an already-open buffer); (ed 'name) jumps to a definition.  Returns T
+so CL:ED treats the request as handled."
+  (flet ((scratch () (if *desktop* (dt-open *desktop* :editor) (run-view (make-editor)))))
+    (run-on-ui
+     (lambda ()
+       (cond
+         ((null x) (scratch))
+         ((or (stringp x) (pathnamep x))
+          (let ((p (pathname x)))
+            (cond ((probe-file p) (%open-file-at p))
+                  (*desktop* (dt-open *desktop* (lambda () (make-editor p))))
+                  (t (run-view (make-editor p))))))
+         ((or (symbolp x) (consp x)) (%goto-symbol x))   ; a function/definition name
+         (t (scratch))))))
+  t)
+
 ;;; --- xref: who-calls / -references / -binds / -sets / -macroexpands ---------
 
 (defun %xref (kind sym)

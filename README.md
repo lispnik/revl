@@ -129,6 +129,10 @@ At a glance — the tools it ships (each detailed below):
   `~/.revl_history`; Up/Down recall it, **Ctrl-R** searches it.  File ▸ Load
   file (F7) loads a `.lisp` file with captured output; Save transcript writes the
   buffer; Save/Restore session reopens your REPL windows and their packages.
+- **`ed` opens in revl.** Standard `cl:ed` is wired into `sb-ext:*ed-functions*`:
+  `(ed "file")` opens that file in a revl editor (reusing an already-open buffer),
+  `(ed 'name)` jumps to a definition, and `(ed)` opens a scratch buffer — each
+  marshalled from the REPL's worker thread to the UI thread.
 - **Arglist echo & a live status line.** As you type, the status line shows the
   operator's lambda list (via `sb-introspect`), e.g. `(mapcar function list
   &rest more-lists)`; otherwise it shows the current package, thread count and

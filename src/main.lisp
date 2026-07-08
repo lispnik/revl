@@ -215,7 +215,8 @@ per PERM, reusing revl's sexp rewriter.  Returns new TEXT, or NIL if unchanged."
         *paredit-fn*            #'revl-paredit                    ; paredit
         *reorder-fn*            #'revl-reorder                    ; reorder args at call sites
         revision:*url-fetch-fn*          #'revl-logic::%http-get           ; fetch (curl)
-        *hyperspec-url-fn*      #'revl-logic::hyperspec-url))     ; CLHS map
+        *hyperspec-url-fn*      #'revl-logic::hyperspec-url)      ; CLHS map
+  (pushnew 'revl-ed sb-ext:*ed-functions*))     ; (ed …) from a REPL opens in revl
 
 (defun main ()
   "Run the revision-based revl IDE until the user quits the launcher."
