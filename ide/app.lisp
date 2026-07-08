@@ -57,20 +57,34 @@ NIL when the user quits."
   "The path ~/.config/revl/NAME."
   (merge-pathnames (concatenate 'string ".config/revl/" name) (user-homedir-pathname)))
 
+(defvar *revl-config-errors* nil "Config-load error strings, collected during startup and surfaced after restore.")
+
 (defun %load-revl-config (name)
-  "Load ~/.config/revl/NAME in the REVL package, if it exists; errors are logged, not fatal."
+  "Load ~/.config/revl/NAME in the REVL package, if it exists; an error is logged and
+collected in *REVL-CONFIG-ERRORS* (surfaced after startup), never fatal."
   (let ((file (%revl-config-file name)))
     (when (probe-file file)
-      (ignoring-errors ("revl user config")
-        (let ((*package* (find-package '#:revl)))
-          (load file))))))
+      (handler-case
+          (let ((*package* (find-package '#:revl))) (load file))
+        (error (e)
+          (revision-log "revl config ~a: ~a" name e)
+          (push (format nil "~a: ~a" name e) *revl-config-errors*))))))
+
+(defun %surface-config-errors ()
+  "If any config file failed to load, show the errors in a modal dialog after startup."
+  (when *revl-config-errors*
+    (let ((errs (nreverse *revl-config-errors*)))
+      (setf *revl-config-errors* nil)
+      (message-box (format nil "~{~a~^~2%~}" errs)
+                   :title (format nil " Config error~p in ~~/.config/revl/ " (length errs))
+                   :width 66))))
 
 (defun run-app ()
   "Run the revision-based revl IDE (the full Turbo-Vision-style desktop shell: menu bar +
 status bar + hosted windows; see RUN-DESKTOP).  Loads the user config from ~/.config/revl/ --
 early-init.lisp before the saved layout is restored, init.lisp after."
   (setf *before-layout-restore* (lambda () (%load-revl-config "early-init.lisp"))
-        *after-layout-restore*  (lambda () (%load-revl-config "init.lisp")))
+        *after-layout-restore*  (lambda () (%load-revl-config "init.lisp") (%surface-config-errors)))
   (run-desktop))
 
 ;;; --- the IDE's desktop menus -----------------------------------------------

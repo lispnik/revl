@@ -580,13 +580,27 @@ revl loads two optional user config files from `~/.config/revl/` at startup (Ema
 | `init.lisp` | **after** the layout is restored (so it can inspect / add to the restored windows) |
 
 Both are ordinary Lisp files, loaded in the `revl` package with the desktop already
-built and bound to `revision:*desktop*`. A missing file is skipped; an error in one is
-logged (`revision-log`) and does **not** abort startup. For example, `~/.config/revl/init.lisp`:
+built and bound to `revision:*desktop*`. A missing file is skipped; an error in one does
+**not** abort startup — it is logged and shown in a modal dialog after the desktop comes up.
+For example, `~/.config/revl/init.lisp`:
 
 ```lisp
 ;; open a scratch buffer and a hex view of a file every session
 (dt-open *desktop* :editor)
 (open-hexdump *desktop* "/etc/hosts")
+
+;; add a WAV/RIFF template to the hex editor, guarded so this file is
+;; harmless when the hex-editor widget isn't loaded (#+ is a read-time test)
+#+revision-hexdump
+(pushnew '("WAV / RIFF audio"
+           (:endian :little) (:magic "RIFF")
+           (chunk-id (:string 4)) (chunk-size :u32) (format (:string 4))
+           (subchunk1-id (:string 4)) (subchunk1-size :u32)
+           (audio-format :u16 :enum ((1 . "PCM") (3 . "IEEE float")))
+           (num-channels :u16) (sample-rate :u32) (byte-rate :u32)
+           (block-align :u16) (bits-per-sample :u16)
+           (subchunk2-id (:string 4)) (subchunk2-size :u32))
+         revision-hexdump:*templates* :key #'first :test #'string=)
 ```
 
 (The hex editor also reads its own `~/.revision-hexdump.templates` for custom binary formats.)
