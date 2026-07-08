@@ -548,7 +548,7 @@ button, and an **overwrite confirmation** before it replaces an existing file.
   insert/delete), plus a **structural-template** overlay that parses a file into named typed
   fields — auto-detected by magic bytes — and a byte-level **file diff**.  Multi-GB files
   open paged (never fully loaded) yet stay fully editable via a piece table.
-  ![the hex editor: a BMP with its structural template auto-detected, the parsed field list, the data inspector, an in-place edit, and a /text search](media/hex-editor.gif)
+  ![the hex editor: a PNG with its structural template auto-detected, the parsed field list (enum-decoded), and the template picker listing PNG/ELF/ZIP/JPEG/PDF/Mach-O and more](media/hex-editor.gif)
 - **Git status** (Tools ▸ Git status) — a Magit-style, keyboard-driven view of the working
   tree: the current branch in the title and the changes grouped into **Staged** /
   **Unstaged** / **Untracked** sections, each file expandable to its diff.  Keys act on the
