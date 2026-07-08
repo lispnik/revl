@@ -124,7 +124,7 @@ the tree, preserving the filter."
   (let ((te (and ed-win (find-view ed-win 'edit))))
     (when (and te line)
       (setf (te-cy te) (max 0 (1- line)) (te-cx te) 0 (te-anchor te) nil)
-      (te-clamp te) (te-ensure-visible te))))
+      (te-clamp te) (te-center te))))          ; centre the target line, with context above/below
 
 (defun %open-file-at (path &optional line)
   "Open PATH in a revision editor at LINE, reusing an already-open editor for the same
