@@ -7,14 +7,34 @@
 (in-package #:revl)
 
 (defun %offset-to-line (path char-offset)
-  "1-based line number for CHAR-OFFSET in PATH (or 1)."
+  "1-based line of the definition SB-INTROSPECT records at CHAR-OFFSET in PATH.  The offset
+sits where the reader *resumed* after the previous form -- typically a line or two before
+the real definition, on a blank line or the previous form's newline -- so seek there, then
+skip whitespace and Lisp comments (`;' and nested `#| |#') forward to the next actual form
+and report that line.  This lands exactly on the DEFUN when the file matches its compiled
+source (built-ins whose installed sources differ from the build can still drift)."
   (or (ignore-errors
         (with-open-file (s path :direction :input :external-format :utf-8)
-          (let ((n 1))
-            (dotimes (i (or char-offset 0) n)
-              (let ((c (read-char s nil nil)))
-                (unless c (return n))
-                (when (char= c #\Newline) (incf n)))))))
+          (let ((line 1))
+            (labels ((adv () (let ((c (read-char s nil nil))) (when (eql c #\Newline) (incf line)) c)))
+              (dotimes (i (or char-offset 0)) (unless (adv) (return)))
+              (loop
+                (let ((c (peek-char nil s nil nil)))
+                  (cond
+                    ((null c) (return))
+                    ((member c '(#\Space #\Tab #\Return #\Newline #\Page)) (adv))
+                    ((char= c #\;) (loop for d = (adv) until (or (null d) (eql d #\Newline))))
+                    ((char= c #\#)                                  ; maybe a #| block comment
+                     (adv)
+                     (if (eql (peek-char nil s nil nil) #\|)
+                         (let ((depth 1))
+                           (adv)
+                           (loop while (plusp depth) for d = (adv) while d do
+                             (cond ((and (eql d #\|) (eql (peek-char nil s nil nil) #\#)) (adv) (decf depth))
+                                   ((and (eql d #\#) (eql (peek-char nil s nil nil) #\|)) (adv) (incf depth)))))
+                         (return)))                                 ; #x / #' / #( … : a real form
+                    (t (return)))))
+              line))))
       1))
 
 (defvar *location-stack* '()
