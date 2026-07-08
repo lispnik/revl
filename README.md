@@ -603,7 +603,7 @@ For example, `~/.config/revl/init.lisp`:
          revision-hexdump:*templates* :key #'first :test #'string=)
 ```
 
-(The hex editor also reads its own `~/.revision-hexdump.templates` for custom binary formats.)
+(The hex editor also reads its own `~/.config/revision-hexdump/templates` for custom binary formats.)
 
 ## Notes
 
